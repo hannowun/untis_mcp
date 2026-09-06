@@ -47,6 +47,7 @@ answered without manually logging into two separate web portals.
 |----|-------------|
 | FR-01 | Credentials for each school/child are stored as named profiles in a configuration file. |
 | FR-02 | A profile carries at least: profile name, WebUntis server, school name, username, password, and a human-readable description (e.g. which child it belongs to). |
+| FR-11 | A profile may name a `student_id`. Without it the single child the login reports is used; if the login reports several and none is named, the error lists the children and their ids. |
 | FR-03 | Every data tool takes a mandatory `profile` argument identifying the profile to use. |
 | FR-04 | An unknown profile name produces a clear error that lists the valid profile names. |
 | FR-05 | The server can enumerate the available profiles so the AI can discover them without being told. |
@@ -72,7 +73,15 @@ ISO-8601 (`YYYY-MM-DD`) strings on the wire.
 | 3 | `get_timetable_week` | "Stundenplan Woche" | `profile`, optional `week_of` (any date inside the week) or `year` + `week` | The timetable for the requested school week, grouped by day. |
 | 4 | `get_timetable_day` | "Stundenplan Tag" | `profile`, optional `date` (default: today) | The timetable for a single day. |
 | 5 | `get_messages` | "Mitteilungen" | `profile`, optional `unread_only`, optional `limit` | Messages / messages-of-the-day addressed to the account. |
-| 6 | `list_profiles` | — | none | Configured profile names, descriptions and supported tools (no secrets). |
+| 6 | `get_messages_of_day` | "Tagesmeldungen" | `profile`, optional `date` | The school's messages of the day for one date. Separate from tool 5 on purpose — see below. |
+| 7 | `list_profiles` | — | none | Configured profile names, descriptions and supported tools (no secrets). |
+
+Tools 5 and 6 stay separate rather than one tool with a fallback. One tenant forbids the
+message inbox entirely (section 5.4), and messages of the day work on both — so a single
+`get_messages` that quietly served a different kind of content for one child would make the
+assistant state things about one school that are only true of the other. `get_messages`
+therefore says plainly that it is unavailable for that profile, and the day's announcements
+are their own tool with their own name.
 
 Common behaviour for all tools:
 
@@ -305,7 +314,34 @@ worth calling for which child, instead of the model discovering it by failure.
 
 **Consequence:** `list_profiles` reports capabilities alongside names and descriptions
 (FR-09). Capability data is part of the cached session state of ADR-005 and is refreshed
-with it.
+with it. `list_profiles` itself performs no network I/O — it reports what a cached session
+already established and `null` otherwise — so a school being unreachable can never stop the
+assistant from discovering which profiles exist (FR-07).
+
+A tool must not silently substitute a different data source when its capability is missing:
+messages of the day are a separate tool (section 2.2), not a fallback inside `get_messages`.
+
+### ADR-011: Session lifetime — a proactive TTL plus one reactive retry
+
+**Decision:** Treat a cached session as stale after 8 minutes and re-authenticate before
+using it. Independently, retry a request once after re-authenticating when the server says
+the session is gone: HTTP 401, or a JSON-RPC "not authenticated" error. Do **not** retry on
+HTTP 403.
+
+**Rationale:** Sessions expire after roughly 10 minutes of inactivity (section 5.1), and this
+server is idle between questions, so nearly every request would otherwise pay for one failed
+call plus a login. The 8-minute TTL turns that into a plain login, and the reactive retry
+remains as the safety net for the case where the tenant expires a session sooner, or where a
+session dies for a reason we cannot predict.
+
+403 is deliberately excluded. The spike established that a parent account receives 403 for
+things it is permanently not allowed to read — the message inbox on one tenant, `/api/exams`
+on both (section 5.4). Retrying those would double every failed call and still fail, while
+teaching us nothing: a 403 is an answer, not an outage.
+
+**Consequence:** Two independent paths must be tested: a stale-by-TTL session, and a session
+the server rejects mid-flight. Both are covered against a fake WebUntis rather than a real
+tenant.
 
 ---
 
@@ -624,14 +660,16 @@ What remains open:
 1. Configuration layer and `list_profiles` — done, 2026-09-06. TOML loading with
    `SecretStr` and `password_env` resolution at startup, case-insensitive profile lookup,
    the FastMCP server, and both transports verified against a real MCP client.
-2. Client layer: login, `app/data` discovery (tenant id, student id, capabilities), session
-   cache, re-authentication and single retry (sections 5.1, ADR-005, ADR-010).
+2. Client layer — done, 2026-09-06. Login and `app/data` discovery (tenant id, student id,
+   capabilities), per-profile client with its own cookie jar, lazy session behind a lock,
+   the TTL-plus-retry lifetime of ADR-011, and capability gating (ADR-010). Verified
+   against both real tenants: the capability sets differ exactly as section 5.4 describes.
 3. `get_timetable_day` and `get_timetable_week` on `view/v1/timetable/entries` (ADR-009),
    with the mapping tests built on the anonymised spike payloads.
 4. `get_absences` — the payload is already understood and both tenants serve it.
 5. `get_appointments` from `type: EVENT`, with the calendar endpoint as a secondary source.
 6. `get_messages`, including the capability check that makes it a clean "not available" on
-   the tenant that forbids it.
+   the tenant that forbids it, and `get_messages_of_day` as its own tool.
 7. Dockerfile, `compose.yaml`, `build.ps1`, `deploy.sh`.
 
 The order changed from the original: messages moved to the end because their availability is

@@ -128,3 +128,50 @@ def test_a_configured_token_turns_on_authentication():
     assert create_server(make_config(), auth_token="s3kret").auth is not None
     assert create_server(make_config(), auth_token=None).auth is None
     assert create_server(make_config(), auth_token="").auth is None
+
+
+# ------------------------------------------------------------------ reported capabilities
+
+
+async def test_list_profiles_reports_capabilities_once_a_profile_has_been_used():
+    """FR-09: after a login the assistant learns which tools are worth calling."""
+    from tests.fake_untis import TENANT_WITHOUT_MESSAGES, VIEWS_WITHOUT_MESSAGES, FakeUntis
+    from untis_mcp.untis.client import ClientRegistry, UntisClient
+
+    config = make_config()
+    registry = ClientRegistry(config)
+    # "Ben" attends the school that forbids the message inbox; "anna" has not been used yet.
+    ben = UntisClient(
+        config.get("Ben"),
+        http=FakeUntis(
+            permissions=list(TENANT_WITHOUT_MESSAGES), views=list(VIEWS_WITHOUT_MESSAGES)
+        ).http_client(),
+    )
+    registry._clients["Ben"] = ben
+    await ben.session()
+
+    async with Client(create_server(config, registry=registry)) as client:
+        result = await client.call_tool("list_profiles")
+
+    by_name = {item.name: item for item in result.data}
+    assert by_name["anna"].supported_tools is None  # never contacted, so unknown
+    assert "get_messages" not in by_name["Ben"].supported_tools
+    assert "get_timetable_week" in by_name["Ben"].supported_tools
+    assert "get_messages_of_day" in by_name["Ben"].supported_tools
+
+
+async def test_list_profiles_still_answers_when_a_school_is_unreachable():
+    """FR-07: profile discovery must not depend on any school being up."""
+    from tests.fake_untis import FakeUntis
+    from untis_mcp.untis.client import ClientRegistry, UntisClient
+
+    config = make_config()
+    registry = ClientRegistry(config)
+    registry._clients["Ben"] = UntisClient(
+        config.get("Ben"), http=FakeUntis(unreachable=True).http_client()
+    )
+
+    async with Client(create_server(config, registry=registry)) as client:
+        result = await client.call_tool("list_profiles")
+
+    assert [item.name for item in result.data] == ["anna", "Ben"]

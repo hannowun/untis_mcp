@@ -40,6 +40,9 @@ class ProfileConfig(BaseModel):
     password: SecretStr | None = None
     password_env: str | None = None
     timezone: str = "Europe/Berlin"
+    # Only needed when one login can see several children (FR-11); otherwise the single
+    # child the login reports is used.
+    student_id: int | None = None
 
     @model_validator(mode="after")
     def _check_server(self) -> Self:
