@@ -18,6 +18,9 @@ from typing import Any
 from untis_mcp.models import (
     Absence,
     Absences,
+    Appointment,
+    Appointments,
+    AppointmentSource,
     EntryKind,
     Lesson,
     LessonStatus,
@@ -192,11 +195,16 @@ def _parse_time(value: Any) -> dt.time | None:
     text = str(value or "").strip()
     if not text:
         return None
-    try:
-        return dt.datetime.fromisoformat(text).time()
-    except ValueError:
-        logger.debug("unparseable timestamp %r", text)
-        return None
+    for parse in (
+        lambda item: dt.datetime.fromisoformat(item).time(),  # "2026-09-07T08:00"
+        dt.time.fromisoformat,  # "08:00", should a field carry only a time
+    ):
+        try:
+            return parse(text)
+        except ValueError:
+            continue
+    logger.debug("unparseable timestamp %r", text)
+    return None
 
 
 def _text_of(texts: Any) -> str | None:
@@ -297,3 +305,135 @@ def _parse_clock(value: Any) -> dt.time | None:
         logger.debug("implausible clock value %r", value)
         return None
     return dt.time(hour, minute)
+
+
+# --------------------------------------------------------------------------- appointments
+
+# Field names the calendar endpoint might use. Unlike everything else in this module these
+# are *guesses*: the endpoint answered on both tenants but returned no entries at all, all
+# school year (section 5.2), so its item shape has never been observed. Reading it is
+# therefore strictly additive — whatever cannot be understood is skipped, and the verified
+# EVENT entries of the timetable feed are unaffected.
+CALENDAR_TITLE_KEYS = ("name", "title", "subject", "text", "longName", "displayName")
+CALENDAR_START_KEYS = ("startDateTime", "start", "startTime", "dateTimeFrom")
+CALENDAR_END_KEYS = ("endDateTime", "end", "endTime", "dateTimeTo")
+CALENDAR_NOTE_KEYS = ("notes", "note", "description", "remark", "text")
+
+
+def appointments_from_timetable(timetable: Timetable) -> list[Appointment]:
+    """The verified source: `EVENT` entries of the timetable feed (ADR-009)."""
+    appointments = []
+    for day in timetable.days:
+        for lesson in day.lessons:
+            if lesson.kind is not EntryKind.EVENT:
+                continue
+            title = _first_text(lesson.info, lesson.subject_long, lesson.subject, lesson.note)
+            start, end, all_day = _day_span(lesson.start, lesson.end)
+            appointments.append(
+                Appointment(
+                    date=lesson.date,
+                    start=start,
+                    end=end,
+                    all_day=all_day,
+                    title=title,
+                    teachers=lesson.teachers,
+                    rooms=lesson.rooms,
+                    note=lesson.note if lesson.note != title else None,
+                    is_cancelled=lesson.status is LessonStatus.CANCELLED,
+                    source=AppointmentSource.TIMETABLE,
+                )
+            )
+    return appointments
+
+
+DAY_START = dt.time(0, 0)
+DAY_END = dt.time(23, 59)
+
+
+def _day_span(
+    start: dt.time | None, end: dt.time | None
+) -> tuple[dt.time | None, dt.time | None, bool]:
+    """Strip the day boundaries a multi-day event is sliced along.
+
+    A school event spanning several days arrives as one entry per day, and the observed
+    shape is 08:00-23:59, then 00:00-23:59, then 00:00-16:35. The 00:00 and 23:59 are
+    continuation markers rather than times anybody agreed on, so they are dropped: the first
+    slice keeps "from 08:00", the last keeps "until 16:35", and a slice that is only
+    boundaries is simply an all-day event. Reporting them literally invites the assistant to
+    announce an appointment at midnight.
+    """
+    all_day = start == DAY_START and end is not None and end >= DAY_END
+    return (
+        None if start == DAY_START else start,
+        None if end is not None and end >= DAY_END else end,
+        all_day,
+    )
+
+
+def appointments_from_calendar(payload: Any) -> list[Appointment]:
+    """The unverified source: `calendar-entry/detail`.
+
+    Written to survive a shape nobody has seen: an entry with no readable date or title is
+    dropped rather than guessed at, because a wrong appointment is worse than a missing one.
+    """
+    entries = payload.get("calendarEntries") if isinstance(payload, dict) else None
+    appointments = []
+    for entry in entries or []:
+        if not isinstance(entry, dict):
+            continue
+        start_raw = _pick(entry, CALENDAR_START_KEYS)
+        date = _parse_date(str(start_raw).split("T")[0]) if start_raw else None
+        if date is None:
+            logger.debug("skipping a calendar entry without a readable date: %r", entry)
+            continue
+        title = _first_text(*(entry.get(key) for key in CALENDAR_TITLE_KEYS))
+        if not title:
+            logger.debug("skipping a calendar entry without a readable title: %r", entry)
+            continue
+        start, end, all_day = _day_span(
+            _parse_time(start_raw), _parse_time(_pick(entry, CALENDAR_END_KEYS))
+        )
+        appointments.append(
+            Appointment(
+                date=date,
+                start=start,
+                end=end,
+                all_day=all_day,
+                title=title,
+                note=_first_text(*(entry.get(key) for key in CALENDAR_NOTE_KEYS)),
+                source=AppointmentSource.CALENDAR,
+            )
+        )
+    return appointments
+
+
+def merge_appointments(
+    profile: str,
+    start: dt.date,
+    end: dt.date,
+    from_timetable: list[Appointment],
+    from_calendar: list[Appointment],
+    student: str | None = None,
+) -> Appointments:
+    """Combine both sources, dropping calendar entries the timetable already reported."""
+
+    def key(item: Appointment) -> tuple[dt.date, str]:
+        return item.date, (item.title or "").casefold()
+
+    seen = {key(item) for item in from_timetable}
+    merged = list(from_timetable)
+    for item in from_calendar:
+        if key(item) in seen:
+            continue
+        seen.add(key(item))
+        merged.append(item)
+
+    merged.sort(key=lambda item: (item.date, item.start or dt.time.min, item.title or ""))
+    return Appointments(profile=profile, student=student, start=start, end=end, appointments=merged)
+
+
+def _pick(entry: dict[str, Any], keys: tuple[str, ...]) -> Any:
+    for key in keys:
+        if entry.get(key):
+            return entry[key]
+    return None

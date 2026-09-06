@@ -21,9 +21,15 @@ from fastmcp.exceptions import ToolError
 
 from untis_mcp.config import Config, ProfileConfig
 from untis_mcp.errors import ProfileNotFound, UntisMcpError
-from untis_mcp.models import Absences, ProfileSummary, Timetable
+from untis_mcp.models import Absences, Appointments, ProfileSummary, Timetable
 from untis_mcp.untis.client import ClientRegistry, UntisClient
-from untis_mcp.untis.mapping import parse_absences, parse_timetable
+from untis_mcp.untis.mapping import (
+    appointments_from_calendar,
+    appointments_from_timetable,
+    merge_appointments,
+    parse_absences,
+    parse_timetable,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +122,10 @@ async def default_absence_range(client: UntisClient) -> tuple[dt.date, dt.date]:
     return today - dt.timedelta(days=365), today
 
 
+# How far ahead "my appointments" looks when nobody says otherwise.
+UPCOMING_DAYS = 28
+
+
 def register_tools(mcp: FastMCP, config: Config, registry: ClientRegistry) -> None:
     """Register every tool against this configuration."""
 
@@ -190,6 +200,63 @@ def register_tools(mcp: FastMCP, config: Config, registry: ClientRegistry) -> No
             absences.unexcused_count,
         )
         return absences
+
+    @mcp.tool
+    async def get_appointments(
+        profile: str, start: str | None = None, end: str | None = None
+    ) -> Appointments:
+        """School events and appointments for one child — the "Meine Termine" view.
+
+        `start` and `end` are ISO-8601 dates; by default the window runs from today four
+        weeks ahead. Events come from the child's timetable, where the school enters things
+        like project weeks and outings, and from the school's calendar view. Exams are not
+        included: the schools do not grant parent accounts access to that endpoint.
+
+        An empty list means nothing is scheduled in the window, not that the lookup failed.
+        """
+        client = await client_for(config, registry, profile, "get_appointments")
+        session = await client.session()
+
+        today = dt.date.today()
+        first = parse_date(start, "start", today)
+        last = parse_date(end, "end", first + dt.timedelta(days=UPCOMING_DAYS))
+        if last < first:
+            raise ToolError(f"end={last.isoformat()} lies before start={first.isoformat()}.")
+
+        try:
+            timetable_payload = await client.timetable_entries(first, last)
+        except UntisMcpError as exc:
+            raise ToolError(str(exc)) from exc
+
+        from_timetable = appointments_from_timetable(
+            parse_timetable(timetable_payload, profile=client.profile.name, start=first, end=last)
+        )
+
+        # The calendar view is the unverified half (section 5.2): it must be able to add
+        # appointments, never to take the tool down.
+        from_calendar = []
+        try:
+            from_calendar = appointments_from_calendar(await client.calendar_entries(first, last))
+        except UntisMcpError as exc:
+            logger.info("profile %r: calendar entries unavailable, ignoring (%s)", profile, exc)
+
+        appointments = merge_appointments(
+            profile=client.profile.name,
+            start=first,
+            end=last,
+            from_timetable=from_timetable,
+            from_calendar=from_calendar,
+            student=session.student_name or None,
+        )
+        logger.info(
+            "get_appointments(%s, %s..%s) -> %d (%d from the calendar view)",
+            client.profile.name,
+            first,
+            last,
+            len(appointments.appointments),
+            len(from_calendar),
+        )
+        return appointments
 
     @mcp.tool
     async def get_timetable_day(profile: str, date: str | None = None) -> Timetable:

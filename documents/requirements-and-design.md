@@ -646,7 +646,7 @@ What remains open:
 
 | # | Item | Impact |
 |---|------|--------|
-| 1 | `calendar-entry/detail` is empty everywhere so far. Whether it fills for parent-teacher days later in the year is unknown. | Re-probe before assuming tool 1 is complete; `OFFICEHOURS` / `STUDENT_CONTACT_HOURS` (section 5.4) is the unexplored second candidate. |
+| 1 | `calendar-entry/detail` is empty everywhere so far, so the field names of its entries remain guesses. `get_appointments` reads it additively and drops anything it cannot understand. | Re-probe before assuming tool 1 is complete; `OFFICEHOURS` / `STUDENT_CONTACT_HOURS` (section 5.4) is the unexplored second candidate. |
 | 2 | Whether `type: EVENT` is the only event flavour, and which `statusDetail` values exist beyond `MOVED`. | Completeness of the status mapping; mitigated by mapping unknown values to a passthrough rather than failing. |
 | 3 | `view/v1/timetable/entries` is the newest and least documented endpoint in use. | Highest exposure to a silent WebUntis change; mitigated by the fallbacks of ADR-009. |
 | 4 | The endpoints remain unversioned with no changelog. | Long-term maintenance; the fixtures captured by the spike make a regression detectable. |
@@ -672,7 +672,12 @@ What remains open:
 4. `get_absences` — done, 2026-09-06. Includes the `yyyyMMdd`/`Hmm` decoding this endpoint
    needs, and defaults to the current school year, whose bounds come from the tenant's own
    `getCurrentSchoolyear` (the two schools start three weeks apart).
-5. `get_appointments` from `type: EVENT`, with the calendar endpoint as a secondary source.
+5. `get_appointments` — done, 2026-09-06. `type: EVENT` from the timetable feed, with the
+   calendar view read additively: it may add appointments, never break the tool. Two things
+   the live run taught us are handled — one school enters events with no name at all (the
+   title is null and the assistant describes them by staff and room), and a multi-day event
+   arrives sliced per day along 00:00/23:59 boundaries that are continuation markers rather
+   than times.
 6. `get_messages`, including the capability check that makes it a clean "not available" on
    the tenant that forbids it, and `get_messages_of_day` as its own tool.
 7. Dockerfile, `compose.yaml`, `build.ps1`, `deploy.sh`.

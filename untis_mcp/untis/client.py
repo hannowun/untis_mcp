@@ -35,6 +35,7 @@ DEFAULT_TIMEOUT = 30.0
 
 TIMETABLE_ENTRIES = "/WebUntis/api/rest/view/v1/timetable/entries"
 ABSENCES = "/WebUntis/api/classreg/absences/students"
+CALENDAR_ENTRIES = "/WebUntis/api/rest/view/v2/calendar-entry/detail"
 
 
 class UntisClient:
@@ -166,6 +167,25 @@ class UntisClient:
                 "studentId": session.student_id,
                 "excuseStatusId": -1,
             },
+        )
+
+    async def calendar_entries(self, start: date, end: date) -> Any:
+        """The secondary appointment source (section 5.2).
+
+        The parameter set was discovered from the server's own error messages: `elementType`
+        is the *numeric* element type here, and the range wants full timestamps rather than
+        plain dates. Both tenants accept the call; neither has ever returned an entry.
+        """
+        session = await self.session()
+        return await self.get(
+            CALENDAR_ENTRIES,
+            {
+                "elementId": session.student_id,
+                "elementType": 5,
+                "startDateTime": f"{start.isoformat()}T00:00",
+                "endDateTime": f"{end.isoformat()}T23:59",
+            },
+            needs_token=True,
         )
 
     async def school_year(self) -> tuple[date, date] | None:

@@ -144,3 +144,55 @@ class Absences(BaseModel):
         description="How many of the returned absences are not excused — count them from here "
         "rather than by re-reading the list.",
     )
+
+
+class AppointmentSource(StrEnum):
+    """Where an appointment was found. See ADR-009 for why there are two sources."""
+
+    TIMETABLE = "timetable"
+    CALENDAR = "calendar"
+
+    @classmethod
+    def _missing_(cls, value: object) -> AppointmentSource:
+        return cls.TIMETABLE
+
+
+class Appointment(BaseModel):
+    """A school event or calendar entry — the "Meine Termine" view of WebUntis."""
+
+    date: dt.date
+    start: dt.time | None = None
+    end: dt.time | None = None
+    title: str | None = Field(
+        default=None,
+        description=(
+            "What the event is called. Null when the school entered no name at all — one of "
+            "the two schools routinely does that — in which case describe the appointment by "
+            "its time, teachers and room instead of inventing a title."
+        ),
+    )
+    all_day: bool = Field(
+        default=False, description="True when the event covers the whole day rather than a slot."
+    )
+    # start/end are null on the days a multi-day event merely continues through, so
+    # "start = null, end = 16:35" means "until 16:35 on this day".
+    teachers: list[str] = Field(default_factory=list)
+    rooms: list[str] = Field(default_factory=list)
+    note: str | None = None
+    is_cancelled: bool = Field(
+        default=False, description="Whether the school marked this event as cancelled."
+    )
+    source: AppointmentSource = Field(
+        default=AppointmentSource.TIMETABLE,
+        description="Which WebUntis view this came from; both are read and merged.",
+    )
+
+
+class Appointments(BaseModel):
+    """The answer of `get_appointments`."""
+
+    profile: str = Field(description="The profile these appointments belong to.")
+    student: str | None = Field(default=None, description="The child, as the school names them.")
+    start: dt.date
+    end: dt.date
+    appointments: list[Appointment] = Field(default_factory=list)
