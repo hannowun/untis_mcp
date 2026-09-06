@@ -669,7 +669,9 @@ What remains open:
    `view/v1/timetable/entries` (ADR-009), with the mapping layer and its tests built on an
    anonymised payload captured from a real tenant
    (`tests/fixtures/timetable_entries.json`). Verified against both schools.
-4. `get_absences` — the payload is already understood and both tenants serve it.
+4. `get_absences` — done, 2026-09-06. Includes the `yyyyMMdd`/`Hmm` decoding this endpoint
+   needs, and defaults to the current school year, whose bounds come from the tenant's own
+   `getCurrentSchoolyear` (the two schools start three weeks apart).
 5. `get_appointments` from `type: EVENT`, with the calendar endpoint as a secondary source.
 6. `get_messages`, including the capability check that makes it a clean "not available" on
    the tenant that forbids it, and `get_messages_of_day` as its own tool.

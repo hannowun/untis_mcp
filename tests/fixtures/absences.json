@@ -1,0 +1,59 @@
+{
+ "data": {
+  "absences": [
+   {
+    "id": 104965,
+    "startDate": 20260903,
+    "endDate": 20260903,
+    "startTime": 800,
+    "endTime": 1600,
+    "createDate": 1788415297875,
+    "lastUpdate": 1788515774261,
+    "createdUser": "Sekr",
+    "updatedUser": "Sekr",
+    "reasonId": 18,
+    "reason": "Entschuldigungsschreiben der Eltern",
+    "text": "E-Mail",
+    "interruptions": [],
+    "canEdit": false,
+    "studentName": "Mustermann (MusterA)",
+    "excuseStatus": "entschuldigt",
+    "isExcused": true,
+    "excuse": {
+     "id": 76992,
+     "text": "",
+     "excuseDate": 20260903,
+     "excuseStatus": "entschuldigt",
+     "isExcused": true,
+     "userId": 326,
+     "username": "Sekr"
+    }
+   }
+  ],
+  "absenceReasons": [
+   {
+    "id": 80,
+    "name": "Behördentermine"
+   },
+   {
+    "id": 24,
+    "name": "krank gemeldet"
+   },
+   {
+    "id": 12,
+    "name": "Schulische Gründe"
+   },
+   {
+    "id": 26,
+    "name": "unentschuldigt"
+   },
+   {
+    "id": 19,
+    "name": "ungeklärt"
+   }
+  ],
+  "excuseStatuses": null,
+  "showAbsenceReasonChange": false,
+  "showCreateAbsence": false
+ }
+}

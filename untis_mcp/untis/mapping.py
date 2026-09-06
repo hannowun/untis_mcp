@@ -15,7 +15,15 @@ import datetime as dt
 import logging
 from typing import Any
 
-from untis_mcp.models import EntryKind, Lesson, LessonStatus, Timetable, TimetableDay
+from untis_mcp.models import (
+    Absence,
+    Absences,
+    EntryKind,
+    Lesson,
+    LessonStatus,
+    Timetable,
+    TimetableDay,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -208,3 +216,84 @@ def _first_text(*candidates: Any) -> str | None:
         if text:
             return text
     return None
+
+
+# ------------------------------------------------------------------------------- absences
+
+
+def parse_absences(
+    payload: Any,
+    profile: str,
+    start: dt.date,
+    end: dt.date,
+    student: str | None = None,
+) -> Absences:
+    """Map a `/api/classreg/absences/students` payload onto the domain model.
+
+    This endpoint speaks the *older* wire format of section 5.3 — `yyyyMMdd` dates that
+    arrive as numbers and unpadded `Hmm` times — so it exercises conversions the v1
+    timetable view does not need at all.
+    """
+    data = payload.get("data") if isinstance(payload, dict) else None
+    raw = data.get("absences") if isinstance(data, dict) else None
+    absences = [item for item in (_map_absence(entry) for entry in raw or []) if item]
+    absences.sort(key=lambda item: (item.start_date, item.start_time or dt.time.min))
+    return Absences(
+        profile=profile,
+        student=student,
+        start=start,
+        end=end,
+        absences=absences,
+        unexcused_count=sum(1 for item in absences if not item.is_excused),
+    )
+
+
+def _map_absence(raw: Any) -> Absence | None:
+    if not isinstance(raw, dict):
+        return None
+    start_date = _parse_date(raw.get("startDate"))
+    if start_date is None:
+        logger.debug("skipping an absence without a usable start date: %r", raw.get("startDate"))
+        return None
+
+    excuse = raw.get("excuse") if isinstance(raw.get("excuse"), dict) else {}
+    status = _first_text(raw.get("excuseStatus"), excuse.get("excuseStatus"))
+
+    return Absence(
+        start_date=start_date,
+        end_date=_parse_date(raw.get("endDate")) or start_date,
+        start_time=_parse_clock(raw.get("startTime")),
+        end_time=_parse_clock(raw.get("endTime")),
+        is_excused=_is_excused(raw, excuse, status),
+        excuse_status=status,
+        reason=_first_text(raw.get("reason")),
+        note=_first_text(raw.get("text")),
+        excuse_note=_first_text(excuse.get("text")),
+        recorded_by=_first_text(raw.get("createdUser"), raw.get("updatedUser")),
+    )
+
+
+def _is_excused(raw: dict[str, Any], excuse: dict[str, Any], status: str | None) -> bool:
+    """Prefer the explicit flag; fall back to the excuse record, then to the wording.
+
+    Guessing wrong in the *unexcused* direction is the safer error: it shows the parent
+    something to check rather than quietly reporting all is well.
+    """
+    for candidate in (raw.get("isExcused"), excuse.get("isExcused")):
+        if isinstance(candidate, bool):
+            return candidate
+    if status:
+        return "unentschuldigt" not in status.casefold() and "entschuldigt" in status.casefold()
+    return False
+
+
+def _parse_clock(value: Any) -> dt.time | None:
+    """Decode an unpadded `Hmm`/`HHmm` clock time: 800 is 08:00, 1600 is 16:00."""
+    text = str(value if value is not None else "").strip()
+    if not text or not text.isdigit():
+        return None
+    hour, minute = divmod(int(text), 100)
+    if not (0 <= hour < 24 and 0 <= minute < 60):
+        logger.debug("implausible clock value %r", value)
+        return None
+    return dt.time(hour, minute)

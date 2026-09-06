@@ -10,8 +10,8 @@ school messages instead of logging into two portals.
 
 > **Status:** early development. The requirements, design and architecture are written down
 > in [`documents/requirements-and-design.md`](documents/requirements-and-design.md).
-> The endpoints are verified against both real schools; profiles, the client layer and the
-> two timetable tools work. Absences, appointments and messages are not implemented yet.
+> The endpoints are verified against both real schools; profiles, the client layer, the two
+> timetable tools and absences work. Appointments and messages are not implemented yet.
 
 ---
 
@@ -104,8 +104,8 @@ Or over HTTP:
 UNTIS_MCP_TRANSPORT=http UNTIS_MCP_PORT=8000 uv run untis-mcp
 ```
 
-So far it serves `list_profiles`, `get_timetable_day` and `get_timetable_week`; absences,
-appointments and messages follow.
+So far it serves `list_profiles`, `get_timetable_day`, `get_timetable_week` and
+`get_absences`; appointments and messages follow.
 
 ### Protocol spike
 

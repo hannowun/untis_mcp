@@ -21,9 +21,9 @@ from fastmcp.exceptions import ToolError
 
 from untis_mcp.config import Config, ProfileConfig
 from untis_mcp.errors import ProfileNotFound, UntisMcpError
-from untis_mcp.models import ProfileSummary, Timetable
+from untis_mcp.models import Absences, ProfileSummary, Timetable
 from untis_mcp.untis.client import ClientRegistry, UntisClient
-from untis_mcp.untis.mapping import parse_timetable
+from untis_mcp.untis.mapping import parse_absences, parse_timetable
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +103,19 @@ async def fetch_timetable(
     return timetable
 
 
+async def default_absence_range(client: UntisClient) -> tuple[dt.date, dt.date]:
+    """ "Since the school year began, up to today" — the range a parent actually means.
+
+    The school year comes from the tenant itself; if it refuses that call, a year back is a
+    reasonable stand-in that still spans the whole of a normal school year.
+    """
+    today = dt.date.today()
+    bounds = await client.school_year()
+    if bounds and bounds[0] <= today:
+        return bounds[0], today
+    return today - dt.timedelta(days=365), today
+
+
 def register_tools(mcp: FastMCP, config: Config, registry: ClientRegistry) -> None:
     """Register every tool against this configuration."""
 
@@ -128,6 +141,55 @@ def register_tools(mcp: FastMCP, config: Config, registry: ClientRegistry) -> No
                 )
             )
         return summaries
+
+    @mcp.tool
+    async def get_absences(
+        profile: str,
+        start: str | None = None,
+        end: str | None = None,
+        only_unexcused: bool = False,
+    ) -> Absences:
+        """Absences recorded for one child, with their reason and excuse status.
+
+        `start` and `end` are ISO-8601 dates. They default to the whole current school year
+        up to today, which is what a question like "are there unexcused absences?" means.
+        Set `only_unexcused` to see just the ones the school has not accepted an excuse for.
+
+        `unexcused_count` counts the unexcused entries in this answer; an empty list means
+        nothing was recorded in the range, which is good news rather than a failure.
+        """
+        client = await client_for(config, registry, profile, "get_absences")
+        session = await client.session()
+
+        default_start, default_end = await default_absence_range(client)
+        first = parse_date(start, "start", default_start)
+        last = parse_date(end, "end", default_end)
+        if last < first:
+            raise ToolError(f"end={last.isoformat()} lies before start={first.isoformat()}.")
+
+        try:
+            payload = await client.absences(first, last)
+        except UntisMcpError as exc:
+            raise ToolError(str(exc)) from exc
+
+        absences = parse_absences(
+            payload,
+            profile=client.profile.name,
+            start=first,
+            end=last,
+            student=session.student_name or None,
+        )
+        if only_unexcused:
+            absences.absences = [item for item in absences.absences if not item.is_excused]
+        logger.info(
+            "get_absences(%s, %s..%s) -> %d entries, %d unexcused",
+            client.profile.name,
+            first,
+            last,
+            len(absences.absences),
+            absences.unexcused_count,
+        )
+        return absences
 
     @mcp.tool
     async def get_timetable_day(profile: str, date: str | None = None) -> Timetable:

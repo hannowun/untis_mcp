@@ -105,3 +105,42 @@ class Timetable(BaseModel):
     start: dt.date
     end: dt.date
     days: list[TimetableDay] = Field(default_factory=list)
+
+
+class Absence(BaseModel):
+    """One recorded absence, with the school's own reason and excuse state."""
+
+    start_date: dt.date
+    end_date: dt.date
+    start_time: dt.time | None = Field(default=None, description="Local start time, 24h.")
+    end_time: dt.time | None = None
+    is_excused: bool = Field(
+        description="Whether the school has accepted an excuse for this absence."
+    )
+    excuse_status: str | None = Field(
+        default=None,
+        description="The school's own wording for the excuse state, e.g. 'entschuldigt'.",
+    )
+    reason: str | None = Field(
+        default=None, description="Why the child was absent, as the school recorded it."
+    )
+    note: str | None = Field(default=None, description="Free text attached to the absence.")
+    excuse_note: str | None = Field(default=None, description="Free text attached to the excuse.")
+    recorded_by: str | None = Field(
+        default=None, description="Who entered it — usually a teacher or the school office."
+    )
+
+
+class Absences(BaseModel):
+    """The answer of `get_absences`."""
+
+    profile: str = Field(description="The profile these absences belong to.")
+    student: str | None = Field(default=None, description="The child, as the school names them.")
+    start: dt.date
+    end: dt.date
+    absences: list[Absence] = Field(default_factory=list)
+    unexcused_count: int = Field(
+        default=0,
+        description="How many of the returned absences are not excused — count them from here "
+        "rather than by re-reading the list.",
+    )

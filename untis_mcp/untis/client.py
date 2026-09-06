@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 import httpx
@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 30.0
 
 TIMETABLE_ENTRIES = "/WebUntis/api/rest/view/v1/timetable/entries"
+ABSENCES = "/WebUntis/api/classreg/absences/students"
 
 
 class UntisClient:
@@ -52,6 +53,7 @@ class UntisClient:
         self.profile = profile
         self._http = http or httpx.AsyncClient(timeout=timeout, follow_redirects=True)
         self._session: Session | None = None
+        self._school_year: tuple[date, date] | None = None
         self._lock = asyncio.Lock()
 
     # ------------------------------------------------------------------ session handling
@@ -148,6 +150,46 @@ class UntisClient:
             },
             needs_token=True,
         )
+
+    async def absences(self, start: date, end: date) -> Any:
+        """Recorded absences for this profile's child.
+
+        Cookie-only, and it speaks the compact `yyyyMMdd` format rather than ISO
+        (section 5.3). `excuseStatusId=-1` means "every excuse state".
+        """
+        session = await self.session()
+        return await self.get(
+            ABSENCES,
+            {
+                "startDate": start.strftime("%Y%m%d"),
+                "endDate": end.strftime("%Y%m%d"),
+                "studentId": session.student_id,
+                "excuseStatusId": -1,
+            },
+        )
+
+    async def school_year(self) -> tuple[date, date] | None:
+        """The current school year's bounds, cached for the life of the client.
+
+        Used to give date-ranged tools a default that means something to a parent ("this
+        school year") rather than an arbitrary number of days. Returns None if the tenant
+        refuses the call, and the caller falls back.
+        """
+        if self._school_year is not None:
+            return self._school_year
+        try:
+            result = await self.rpc("getCurrentSchoolyear")
+        except UntisError as exc:
+            logger.debug("profile %r: no school year available (%s)", self.profile.name, exc)
+            return None
+
+        if not isinstance(result, dict):
+            return None
+        start = _compact_date(result.get("startDate"))
+        end = _compact_date(result.get("endDate"))
+        if start and end:
+            self._school_year = (start, end)
+        return self._school_year
 
     async def rpc(self, method: str, params: Any = None) -> Any:
         """One JSON-RPC call, with the same single retry on an expired session."""
@@ -246,3 +288,12 @@ class ClientRegistry:
             except Exception:  # noqa: BLE001 - shutdown must not raise
                 logger.debug("profile %r: error while closing", client.profile.name)
         self._clients.clear()
+
+
+def _compact_date(value: Any) -> date | None:
+    """Decode a `yyyyMMdd` value, which arrives as a number on some tenants."""
+    text = str(value or "").strip()
+    try:
+        return datetime.strptime(text, "%Y%m%d").date()
+    except ValueError:
+        return None
