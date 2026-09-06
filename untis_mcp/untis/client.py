@@ -36,6 +36,8 @@ DEFAULT_TIMEOUT = 30.0
 TIMETABLE_ENTRIES = "/WebUntis/api/rest/view/v1/timetable/entries"
 ABSENCES = "/WebUntis/api/classreg/absences/students"
 CALENDAR_ENTRIES = "/WebUntis/api/rest/view/v2/calendar-entry/detail"
+MESSAGES = "/WebUntis/api/rest/view/v1/messages"
+NEWS_WIDGET = "/WebUntis/api/public/news/newsWidgetData"
 
 
 class UntisClient:
@@ -187,6 +189,17 @@ class UntisClient:
             },
             needs_token=True,
         )
+
+    async def messages(self) -> Any:
+        """The message inbox. Needs the JWT and the tenant-id header, and the permission
+        one of the two schools does not grant (section 5.4)."""
+        await self.session()
+        return await self.get(MESSAGES, needs_token=True)
+
+    async def messages_of_day(self, day: date) -> Any:
+        """The school's announcements for one date. Cookie-only, and ungated."""
+        await self.session()
+        return await self.get(NEWS_WIDGET, {"date": day.strftime("%Y%m%d")})
 
     async def school_year(self) -> tuple[date, date] | None:
         """The current school year's bounds, cached for the life of the client.

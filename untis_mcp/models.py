@@ -196,3 +196,52 @@ class Appointments(BaseModel):
     start: dt.date
     end: dt.date
     appointments: list[Appointment] = Field(default_factory=list)
+
+
+class Message(BaseModel):
+    """One message from the WebUntis inbox, addressed to the parent account."""
+
+    subject: str | None = None
+    body: str | None = Field(default=None, description="The message text, markup removed.")
+    sender: str | None = Field(default=None, description="Who sent it, if the school records it.")
+    sent: dt.datetime | None = None
+    is_read: bool | None = Field(
+        default=None, description="Null when the school does not report a read state."
+    )
+    needs_confirmation: bool = Field(
+        default=False,
+        description="The school asks for a read confirmation, which must be given in "
+        "WebUntis itself — this server is read-only.",
+    )
+    has_attachments: bool = False
+
+
+class Messages(BaseModel):
+    """The answer of `get_messages`."""
+
+    profile: str = Field(description="The profile these messages belong to.")
+    messages: list[Message] = Field(default_factory=list)
+    unread_count: int = Field(
+        default=0, description="How many of the returned messages are unread."
+    )
+
+
+class MessageOfDay(BaseModel):
+    """One school-wide announcement for a given day."""
+
+    subject: str | None = Field(
+        default=None, description="Often empty — these notices frequently carry only text."
+    )
+    text: str = Field(description="The announcement, with HTML markup removed.")
+    has_attachments: bool = False
+
+
+class MessagesOfDay(BaseModel):
+    """The answer of `get_messages_of_day`."""
+
+    profile: str = Field(description="The profile these announcements belong to.")
+    date: dt.date
+    messages: list[MessageOfDay] = Field(default_factory=list)
+    system_message: str | None = Field(
+        default=None, description="A notice from WebUntis itself rather than from the school."
+    )

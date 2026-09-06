@@ -21,13 +21,22 @@ from fastmcp.exceptions import ToolError
 
 from untis_mcp.config import Config, ProfileConfig
 from untis_mcp.errors import ProfileNotFound, UntisMcpError
-from untis_mcp.models import Absences, Appointments, ProfileSummary, Timetable
+from untis_mcp.models import (
+    Absences,
+    Appointments,
+    Messages,
+    MessagesOfDay,
+    ProfileSummary,
+    Timetable,
+)
 from untis_mcp.untis.client import ClientRegistry, UntisClient
 from untis_mcp.untis.mapping import (
     appointments_from_calendar,
     appointments_from_timetable,
     merge_appointments,
     parse_absences,
+    parse_messages,
+    parse_messages_of_day,
     parse_timetable,
 )
 
@@ -257,6 +266,58 @@ def register_tools(mcp: FastMCP, config: Config, registry: ClientRegistry) -> No
             len(from_calendar),
         )
         return appointments
+
+    @mcp.tool
+    async def get_messages(profile: str, unread_only: bool = False, limit: int = 20) -> Messages:
+        """Messages sent to this parent account through the WebUntis message centre.
+
+        Not every school grants access to it: where the account lacks the permission, this
+        tool says so plainly and permanently, and the school's daily announcements are
+        available through `get_messages_of_day` instead.
+
+        Messages that ask for a read confirmation are marked; confirming one has to happen
+        in WebUntis itself, because this server never writes.
+        """
+        client = await client_for(config, registry, profile, "get_messages")
+        try:
+            payload = await client.messages()
+        except UntisMcpError as exc:
+            raise ToolError(str(exc)) from exc
+
+        messages = parse_messages(payload, profile=client.profile.name)
+        if unread_only:
+            messages.messages = [item for item in messages.messages if item.is_read is False]
+        if limit > 0:
+            messages.messages = messages.messages[:limit]
+        logger.info(
+            "get_messages(%s) -> %d shown, %d unread",
+            client.profile.name,
+            len(messages.messages),
+            messages.unread_count,
+        )
+        return messages
+
+    @mcp.tool
+    async def get_messages_of_day(profile: str, date: str | None = None) -> MessagesOfDay:
+        """The school's announcements for one day — the "Tagesmeldungen" of WebUntis.
+
+        `date` is an ISO-8601 date and defaults to today. These are school-wide notices
+        ("this week runs on the short timetable"), not messages addressed to one family, and
+        the same notice usually repeats on every day it is valid for. Every school publishes
+        these, including one whose message inbox is closed to parents.
+        """
+        client = await client_for(config, registry, profile, "get_messages_of_day")
+        day = parse_date(date, "date", dt.date.today())
+        try:
+            payload = await client.messages_of_day(day)
+        except UntisMcpError as exc:
+            raise ToolError(str(exc)) from exc
+
+        messages = parse_messages_of_day(payload, profile=client.profile.name, date=day)
+        logger.info(
+            "get_messages_of_day(%s, %s) -> %d", client.profile.name, day, len(messages.messages)
+        )
+        return messages
 
     @mcp.tool
     async def get_timetable_day(profile: str, date: str | None = None) -> Timetable:

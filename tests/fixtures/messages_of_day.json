@@ -1,0 +1,22 @@
+{
+ "data": {
+  "systemMessage": null,
+  "messagesOfDay": [
+   {
+    "id": 1006,
+    "subject": "",
+    "text": "Am Dienstag kommt der Fotograf. Es werden nur die 7.Klassen fotografiert und in der 6. Std. alle neuen Schülerinnen und Schüler, die noch keinen Schülerausweis haben. Zudem werden Klassenfotos gemacht.<br>Die Schülerausweise aus dem letzten Schuljahr behalten ihre Gültigkeit.",
+    "isExpanded": false,
+    "attachments": []
+   },
+   {
+    "id": 1009,
+    "subject": "",
+    "text": "In dieser Woche wird nach Kurzstudnenplan unterrichtet.",
+    "isExpanded": false,
+    "attachments": []
+   }
+  ],
+  "rssUrl": "NewsFeed.do?school=gym-musterstadt"
+ }
+}

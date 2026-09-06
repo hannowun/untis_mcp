@@ -398,8 +398,8 @@ profile rather than crash the server (FR-06, FR-07).
 | 3, 4 | `GET /WebUntis/api/public/timetable/weekly/data?elementType=5&elementId={studentId}&date={ISO Monday}&formatId=1` | cookie | verified — also the only place the class id appears |
 | 3, 4 | JSON-RPC `getTimetable` `{id: studentId, type: 5, startDate, endDate}` | cookie | verified — **but the range must lie inside one school year**, else `-8507` |
 | 2 | `GET /WebUntis/api/classreg/absences/students?startDate&endDate&studentId&excuseStatusId=-1` | cookie | **verified** — returns reason, excuse status and the excuse record |
-| 5 | `GET /WebUntis/api/rest/view/v1/messages` | JWT + `tenant-id` | **partly verified** — works on A, HTTP 403 on B (no `MESSAGES` permission) |
-| 5 | `GET /WebUntis/api/public/news/newsWidgetData?date={yyyyMMdd}` | cookie | verified (empty on both) |
+| 5 | `GET /WebUntis/api/rest/view/v1/messages` | JWT + `tenant-id` | **partly verified** — works on A, HTTP 403 on B (no `MESSAGES` permission). A's inbox has always been empty, so the envelope is known but an individual message has never been seen |
+| 6 | `GET /WebUntis/api/public/news/newsWidgetData?date={yyyyMMdd}` | cookie | **verified with content** — tenant B publishes announcements; their `text` is HTML, and a notice repeats on every day it is valid for |
 | 1 | `GET /WebUntis/api/rest/view/v2/calendar-entry/detail?elementId={studentId}&elementType=5&startDateTime={ISO+time}&endDateTime={ISO+time}` | JWT + `tenant-id` | reachable on both — but `{"calendarEntries": []}` for the **entire school year** |
 | 1 | `GET /WebUntis/api/exams?startDate&endDate&klasseId&withGrades` | cookie | **unavailable** — HTTP 403 on both, even with a real class id |
 | — | JSON-RPC `getCurrentSchoolyear`, `getTimegridUnits`, `getHolidays` | cookie | verified — school year bounds, period times, holidays |
@@ -648,6 +648,7 @@ What remains open:
 |---|------|--------|
 | 1 | `calendar-entry/detail` is empty everywhere so far, so the field names of its entries remain guesses. `get_appointments` reads it additively and drops anything it cannot understand. | Re-probe before assuming tool 1 is complete; `OFFICEHOURS` / `STUDENT_CONTACT_HOURS` (section 5.4) is the unexplored second candidate. |
 | 2 | Whether `type: EVENT` is the only event flavour, and which `statusDetail` values exist beyond `MOVED`. | Completeness of the status mapping; mitigated by mapping unknown values to a passthrough rather than failing. |
+| 2a | The item shape of a message in the inbox, and of a calendar entry: both endpoints answer, both have only ever returned empty lists. | `get_messages` and `get_appointments` tolerate several plausible field namings and skip what they cannot read, so a guess cannot produce a wrong message or a wrong appointment. Re-check once a school actually sends one. |
 | 3 | `view/v1/timetable/entries` is the newest and least documented endpoint in use. | Highest exposure to a silent WebUntis change; mitigated by the fallbacks of ADR-009. |
 | 4 | The endpoints remain unversioned with no changelog. | Long-term maintenance; the fixtures captured by the spike make a regression detectable. |
 | 5 | Is a container registry available, or is the tarball transfer the primary path? | Shape of the deployment scripts. |
@@ -678,8 +679,10 @@ What remains open:
    title is null and the assistant describes them by staff and room), and a multi-day event
    arrives sliced per day along 00:00/23:59 boundaries that are continuation markers rather
    than times.
-6. `get_messages`, including the capability check that makes it a clean "not available" on
-   the tenant that forbids it, and `get_messages_of_day` as its own tool.
+6. `get_messages` and `get_messages_of_day` — done, 2026-09-06. The capability check makes
+   the inbox a clean "not available" on the tenant that forbids it, while the announcements
+   work there — which is the concrete payoff of keeping them separate (section 2.2).
+   Announcements arrive as HTML and are converted to text.
 7. Dockerfile, `compose.yaml`, `build.ps1`, `deploy.sh`.
 
 The order changed from the original: messages moved to the end because their availability is

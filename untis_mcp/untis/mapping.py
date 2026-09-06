@@ -12,7 +12,9 @@ This is where the fragility lives (section 9), so the rules are:
 from __future__ import annotations
 
 import datetime as dt
+import html
 import logging
+import re
 from typing import Any
 
 from untis_mcp.models import (
@@ -24,6 +26,10 @@ from untis_mcp.models import (
     EntryKind,
     Lesson,
     LessonStatus,
+    Message,
+    MessageOfDay,
+    Messages,
+    MessagesOfDay,
     Timetable,
     TimetableDay,
 )
@@ -437,3 +443,137 @@ def _pick(entry: dict[str, Any], keys: tuple[str, ...]) -> Any:
         if entry.get(key):
             return entry[key]
     return None
+
+
+# ------------------------------------------------------------------------------- messages
+
+# The school writes announcements in a rich-text box, so the payload contains HTML. An
+# assistant reading "<br>" aloud helps nobody, and neither does an escaped umlaut.
+BREAKS = re.compile(r"(?i)<br\s*/?>|</p\s*>|</div\s*>|</li\s*>")
+TAGS = re.compile(r"<[^>]+>")
+
+
+def plain_text(value: Any) -> str | None:
+    """Turn a school's HTML snippet into readable text, preserving its line breaks."""
+    text = str(value or "")
+    if not text.strip():
+        return None
+    text = BREAKS.sub("\n", text)
+    text = TAGS.sub("", text)
+    text = html.unescape(text)
+    lines = [line.strip() for line in text.splitlines()]
+    cleaned = "\n".join(line for line in lines if line)
+    return cleaned or None
+
+
+def parse_messages_of_day(payload: Any, profile: str, date: dt.date) -> MessagesOfDay:
+    """Map a `newsWidgetData` payload. Verified against a tenant that publishes these."""
+    data = payload.get("data") if isinstance(payload, dict) else None
+    data = data if isinstance(data, dict) else {}
+
+    messages = []
+    for entry in data.get("messagesOfDay") or []:
+        if not isinstance(entry, dict):
+            continue
+        text = plain_text(entry.get("text"))
+        subject = plain_text(entry.get("subject"))
+        if not text and not subject:
+            continue
+        messages.append(
+            MessageOfDay(
+                subject=subject,
+                text=text or subject or "",
+                has_attachments=bool(entry.get("attachments")),
+            )
+        )
+
+    return MessagesOfDay(
+        profile=profile,
+        date=date,
+        messages=messages,
+        system_message=plain_text(data.get("systemMessage")),
+    )
+
+
+# The inbox envelope is verified, but both of its lists were empty on the tenant that grants
+# access, so the *item* shape has never been observed. These are the plausible namings; an
+# item that yields neither a subject nor a body is skipped rather than reported as blank.
+MESSAGE_SUBJECT_KEYS = ("subject", "title", "name")
+MESSAGE_BODY_KEYS = ("content", "body", "text", "messageContent", "contentPreview")
+MESSAGE_SENDER_KEYS = ("sender", "from", "senderName", "author")
+MESSAGE_SENT_KEYS = ("sentDateTime", "sentDate", "sentAt", "date", "timestamp")
+MESSAGE_READ_KEYS = ("isRead", "read")
+
+
+def parse_messages(payload: Any, profile: str) -> Messages:
+    """Map a `view/v1/messages` payload onto the domain model."""
+    envelope = payload if isinstance(payload, dict) else {}
+    messages: list[Message] = []
+    for key, needs_confirmation in (
+        ("incomingMessages", False),
+        ("readConfirmationMessages", True),
+    ):
+        for entry in envelope.get(key) or []:
+            message = _map_message(entry, needs_confirmation)
+            if message:
+                messages.append(message)
+
+    messages.sort(key=lambda item: (item.sent is None, item.sent or dt.datetime.min), reverse=True)
+    return Messages(
+        profile=profile,
+        messages=messages,
+        unread_count=sum(1 for item in messages if item.is_read is False),
+    )
+
+
+def _map_message(raw: Any, needs_confirmation: bool) -> Message | None:
+    if not isinstance(raw, dict):
+        return None
+    subject = plain_text(_pick(raw, MESSAGE_SUBJECT_KEYS))
+    body = plain_text(_pick(raw, MESSAGE_BODY_KEYS))
+    if not subject and not body:
+        logger.debug("skipping a message with neither subject nor body: %r", raw)
+        return None
+
+    read = next(
+        (raw[key] for key in MESSAGE_READ_KEYS if isinstance(raw.get(key), bool)),
+        None,
+    )
+    return Message(
+        subject=subject,
+        body=body,
+        sender=_sender(_pick(raw, MESSAGE_SENDER_KEYS)),
+        sent=_parse_datetime(_pick(raw, MESSAGE_SENT_KEYS)),
+        is_read=read,
+        needs_confirmation=needs_confirmation,
+        has_attachments=bool(raw.get("attachments")),
+    )
+
+
+def _sender(value: Any) -> str | None:
+    """A sender may be a plain string or an object naming a person."""
+    if isinstance(value, dict):
+        return _first_text(
+            value.get("displayName"),
+            value.get("name"),
+            value.get("longName"),
+            value.get("userName"),
+        )
+    return _first_text(value)
+
+
+def _parse_datetime(value: Any) -> dt.datetime | None:
+    if isinstance(value, int | float) and value > 0:
+        # Epoch milliseconds, as createDate and lastUpdate use elsewhere (section 5.3).
+        try:
+            return dt.datetime.fromtimestamp(value / 1000)
+        except (OverflowError, OSError, ValueError):
+            return None
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return dt.datetime.fromisoformat(text)
+    except ValueError:
+        date = _parse_date(text)
+        return dt.datetime.combine(date, dt.time.min) if date else None

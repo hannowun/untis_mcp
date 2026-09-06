@@ -10,8 +10,8 @@ school messages instead of logging into two portals.
 
 > **Status:** early development. The requirements, design and architecture are written down
 > in [`documents/requirements-and-design.md`](documents/requirements-and-design.md).
-> The endpoints are verified against both real schools; profiles, the client layer, the two
-> timetable tools, absences and appointments work. Messages are not implemented yet.
+> The endpoints are verified against both real schools and every tool works. What remains
+> is the container, the build script and the deployment script.
 
 ---
 
@@ -27,7 +27,8 @@ addresses, so one server instance serves all children.
 | `get_absences` | Recorded absences with time span, reason and excuse status. |
 | `get_timetable_week` | The timetable for a given school week. |
 | `get_timetable_day` | The timetable for a given day. |
-| `get_messages` | Messages / messages-of-the-day for the account. |
+| `get_messages` | Messages sent to the account through the WebUntis message centre. |
+| `get_messages_of_day` | The school's announcements for a day. |
 
 All tools are **read-only** — the server never changes anything in WebUntis.
 
@@ -104,8 +105,7 @@ Or over HTTP:
 UNTIS_MCP_TRANSPORT=http UNTIS_MCP_PORT=8000 uv run untis-mcp
 ```
 
-So far it serves `list_profiles`, `get_timetable_day`, `get_timetable_week`,
-`get_absences` and `get_appointments`; messages follow.
+All read-only tools are implemented; the container setup is what remains.
 
 ### Protocol spike
 
