@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import date
 from typing import Any
 
 import httpx
@@ -31,6 +32,8 @@ from untis_mcp.untis.capabilities import Capabilities
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 30.0
+
+TIMETABLE_ENTRIES = "/WebUntis/api/rest/view/v1/timetable/entries"
 
 
 class UntisClient:
@@ -126,6 +129,25 @@ class UntisClient:
             raise UntisUnavailable(
                 self.profile.name, f"{path} returned no JSON (HTTP {response.status_code})"
             ) from exc
+
+    async def timetable_entries(self, start: date, end: date) -> Any:
+        """The primary timetable source of ADR-009, scoped to this profile's child.
+
+        `resourceType` takes the enum *name* here, unlike `elementType` elsewhere, which
+        takes the numeric element type (section 5.3).
+        """
+        session = await self.session()
+        return await self.get(
+            TIMETABLE_ENTRIES,
+            {
+                "start": start.isoformat(),
+                "end": end.isoformat(),
+                "format": 1,
+                "resourceType": "STUDENT",
+                "resources": session.student_id,
+            },
+            needs_token=True,
+        )
 
     async def rpc(self, method: str, params: Any = None) -> Any:
         """One JSON-RPC call, with the same single retry on an expired session."""

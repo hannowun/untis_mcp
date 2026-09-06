@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -51,9 +52,13 @@ class FakeUntis:
     """Paths that answer 403 — permanently, the way /api/exams does for a parent."""
     rpc_session_expired_once: bool = False
 
+    responses: dict[str, Any] = field(default_factory=dict)
+    """Payloads to serve for given paths; anything else gets a trivial 200."""
+
     # --- what happened ----------------------------------------------------------------
     login_count: int = 0
     data_requests: list[str] = field(default_factory=list)
+    data_params: list[dict[str, str]] = field(default_factory=list)
     seen_headers: list[dict[str, str]] = field(default_factory=list)
     session_ids: list[str] = field(default_factory=list)
 
@@ -134,6 +139,7 @@ class FakeUntis:
 
     def _data(self, request: httpx.Request, path: str) -> httpx.Response:
         self.data_requests.append(path)
+        self.data_params.append(dict(request.url.params))
         self.seen_headers.append(dict(request.headers))
 
         if path in self.forbid_paths:
@@ -141,6 +147,8 @@ class FakeUntis:
         if self.expire_next_request:
             self.expire_next_request = False
             return httpx.Response(401, json={"errorMessage": "session expired"})
+        if path in self.responses:
+            return httpx.Response(200, json=self.responses[path])
         return httpx.Response(200, json={"ok": True, "path": path})
 
     @staticmethod
@@ -158,3 +166,9 @@ class FakeUntis:
 
     def http_client(self) -> httpx.AsyncClient:
         return httpx.AsyncClient(transport=httpx.MockTransport(self.handler))
+
+    def serve_fixture(self, path: str, name: str) -> FakeUntis:
+        """Answer `path` with a payload captured from a real tenant."""
+        fixture = Path(__file__).parent / "fixtures" / name
+        self.responses[path] = json.loads(fixture.read_text(encoding="utf-8"))
+        return self

@@ -1,0 +1,210 @@
+"""WebUntis payloads to domain models.
+
+This is where the fragility lives (section 9), so the rules are:
+
+* never raise on a payload that is merely different — drop what cannot be read and keep the
+  rest, because half a timetable beats an error message,
+* never assume a field's position: an element's own `type` says whether it is a teacher, a
+  room or the name of an event, and the observed tenants do not agree on the ordering,
+* keep the raw status alongside the normalised one, so an unfamiliar value stays visible.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import logging
+from typing import Any
+
+from untis_mcp.models import EntryKind, Lesson, LessonStatus, Timetable, TimetableDay
+
+logger = logging.getLogger(__name__)
+
+# `status` values of the v1 timetable view, as observed on both tenants (section 5.2).
+STATUS_MAP = {
+    "REGULAR": LessonStatus.REGULAR,
+    "CANCELLED": LessonStatus.CANCELLED,
+    "CHANGED": LessonStatus.CHANGED,
+    "ADDITIONAL": LessonStatus.ADDITIONAL,
+}
+
+KIND_MAP = {
+    "NORMAL_TEACHING_PERIOD": EntryKind.LESSON,
+    "EVENT": EntryKind.EVENT,
+    "ADDITIONAL_PERIOD": EntryKind.ADDITIONAL,
+}
+
+MAX_POSITIONS = 8  # position1..position7, exclusive upper bound
+
+
+def parse_timetable(
+    payload: Any,
+    profile: str,
+    start: dt.date,
+    end: dt.date,
+    student: str | None = None,
+) -> Timetable:
+    """Map a `view/v1/timetable/entries` payload onto the domain model."""
+    days_raw = payload.get("days") if isinstance(payload, dict) else None
+    days = [day for day in (_map_day(item) for item in days_raw or []) if day is not None]
+    days.sort(key=lambda day: day.date)
+    return Timetable(profile=profile, student=student, start=start, end=end, days=days)
+
+
+def _map_day(raw: Any) -> TimetableDay | None:
+    if not isinstance(raw, dict):
+        return None
+    date = _parse_date(raw.get("date"))
+    if date is None:
+        logger.debug("skipping a day without a usable date: %r", raw.get("date"))
+        return None
+
+    entries = raw.get("gridEntries") or []
+    lessons = [lesson for lesson in (_map_entry(item, date) for item in entries) if lesson]
+    lessons.sort(key=lambda lesson: (lesson.start or dt.time.min, lesson.subject or ""))
+    return TimetableDay(date=date, has_data=raw.get("status") != "NO_DATA", lessons=lessons)
+
+
+def _map_entry(raw: Any, day: dt.date) -> Lesson | None:
+    if not isinstance(raw, dict):
+        return None
+
+    start, end = _duration(raw.get("duration"))
+    elements = _elements(raw)
+
+    subject = _first(elements["current"].get("SUBJECT"))
+    info = _first(elements["current"].get("INFO"))
+    status_raw = str(raw.get("status") or "")
+
+    # A cancelled or moved lesson names the reason in one of several free-text fields; the
+    # first non-empty one is what a parent actually wants to read.
+    note = _first_text(
+        raw.get("substitutionText"),
+        raw.get("lessonText"),
+        raw.get("notesAll"),
+        _text_of(raw.get("texts")),
+    )
+    detail = raw.get("statusDetail")
+    if detail:
+        note = f"{detail}: {note}" if note else str(detail)
+
+    info_text = (info.long or info.short) if info else (raw.get("lessonInfo") or None)
+    # The school often repeats the lesson info verbatim in the free-text fields; saying the
+    # same thing twice only costs the assistant attention.
+    if note and info_text and note.strip() == str(info_text).strip():
+        note = None
+
+    return Lesson(
+        date=day,
+        start=start,
+        end=end,
+        subject=subject.short if subject else None,
+        subject_long=subject.long if subject else None,
+        teachers=[element.short for element in elements["current"].get("TEACHER", [])],
+        rooms=[element.short for element in elements["current"].get("ROOM", [])],
+        status=STATUS_MAP.get(status_raw, LessonStatus.UNKNOWN),
+        status_raw=status_raw,
+        kind=KIND_MAP.get(str(raw.get("type") or ""), EntryKind.OTHER),
+        replaced_teachers=[element.short for element in elements["removed"].get("TEACHER", [])],
+        replaced_rooms=[element.short for element in elements["removed"].get("ROOM", [])],
+        info=info_text,
+        note=note,
+    )
+
+
+# ------------------------------------------------------------------------------- elements
+
+
+class _Element:
+    """One teacher, subject or room, as a position slot describes it."""
+
+    __slots__ = ("short", "long")
+
+    def __init__(self, short: str, long: str) -> None:
+        self.short = short
+        self.long = long
+
+
+def _elements(entry: dict[str, Any]) -> dict[str, dict[str, list[_Element]]]:
+    """Collect every position slot, keyed by whether it is current or removed, then by type.
+
+    Both halves matter and either can be absent: a substitution has `current` *and*
+    `removed`, while a lesson whose teacher was withdrawn without cover has `current: null`
+    and only `removed` — dereferencing `current` blindly would lose exactly that case.
+    """
+    collected: dict[str, dict[str, list[_Element]]] = {"current": {}, "removed": {}}
+
+    for index in range(1, MAX_POSITIONS):
+        for slot in entry.get(f"position{index}") or []:
+            if not isinstance(slot, dict):
+                continue
+            for half in ("current", "removed"):
+                node = slot.get(half)
+                if not isinstance(node, dict):
+                    continue
+                kind = str(node.get("type") or "")
+                short = str(node.get("shortName") or node.get("displayName") or "").strip()
+                long = str(node.get("longName") or "").strip()
+                if not kind or not (short or long):
+                    continue
+                collected[half].setdefault(kind, []).append(_Element(short or long, long or short))
+
+    return collected
+
+
+def _first(elements: list[_Element] | None) -> _Element | None:
+    return elements[0] if elements else None
+
+
+# --------------------------------------------------------------------------------- values
+
+
+def _parse_date(value: Any) -> dt.date | None:
+    """Accept the ISO dates of the v1 view and the `yyyyMMdd` of the older endpoints."""
+    if isinstance(value, dt.date):
+        return value
+    text = str(value or "").strip()
+    if not text:
+        return None
+    for parse in (dt.date.fromisoformat, lambda item: dt.datetime.strptime(item, "%Y%m%d").date()):
+        try:
+            return parse(text)
+        except ValueError:
+            continue
+    return None
+
+
+def _duration(value: Any) -> tuple[dt.time | None, dt.time | None]:
+    """`duration` holds full ISO timestamps — no time-grid lookup needed (ADR-009)."""
+    if not isinstance(value, dict):
+        return None, None
+    return _parse_time(value.get("start")), _parse_time(value.get("end"))
+
+
+def _parse_time(value: Any) -> dt.time | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return dt.datetime.fromisoformat(text).time()
+    except ValueError:
+        logger.debug("unparseable timestamp %r", text)
+        return None
+
+
+def _text_of(texts: Any) -> str | None:
+    if not isinstance(texts, list):
+        return None
+    parts = [
+        str(item.get("text")).strip()
+        for item in texts
+        if isinstance(item, dict) and str(item.get("text") or "").strip()
+    ]
+    return " / ".join(parts) if parts else None
+
+
+def _first_text(*candidates: Any) -> str | None:
+    for candidate in candidates:
+        text = str(candidate or "").strip()
+        if text:
+            return text
+    return None

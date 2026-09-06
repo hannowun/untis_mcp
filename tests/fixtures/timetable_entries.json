@@ -1,0 +1,1927 @@
+{
+ "format": 1,
+ "days": [
+  {
+   "date": "2026-08-23",
+   "resourceType": "STUDENT",
+   "resource": {
+    "id": 1001,
+    "shortName": "MusterA",
+    "longName": "Mustermann",
+    "displayName": ""
+   },
+   "status": "NO_DATA",
+   "dayEntries": [],
+   "gridEntries": [],
+   "backEntries": []
+  },
+  {
+   "date": "2026-08-24",
+   "resourceType": "STUDENT",
+   "resource": {
+    "id": 1001,
+    "shortName": "MusterA",
+    "longName": "Mustermann",
+    "displayName": ""
+   },
+   "status": "REGULAR",
+   "dayEntries": [],
+   "gridEntries": [
+    {
+     "ids": [
+      2836048,
+      2836051
+     ],
+     "duration": {
+      "start": "2026-08-24T08:50",
+      "end": "2026-08-24T10:35"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Ahl",
+        "longName": "Ahlers",
+        "displayName": "Ahl",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "de",
+        "longName": "Deutsch",
+        "displayName": "de",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2849848
+     ],
+     "duration": {
+      "start": "2026-08-24T10:40",
+      "end": "2026-08-24T11:25"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 2,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Bod",
+        "longName": "Bodenstein",
+        "displayName": "Bod",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "en",
+        "longName": "Englisch",
+        "displayName": "en",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2915950
+     ],
+     "duration": {
+      "start": "2026-08-24T11:35",
+      "end": "2026-08-24T12:20"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "REGULAR",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 3,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Cra",
+        "longName": "Cramer",
+        "displayName": "Cra",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "Pause",
+        "longName": "Mittagspause",
+        "displayName": "Pause",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 102",
+        "longName": "R 102",
+        "displayName": "R 102",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2959355,
+      2959358
+     ],
+     "duration": {
+      "start": "2026-08-24T12:25",
+      "end": "2026-08-24T14:05"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 4,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [
+      "NOTES"
+     ],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Dor",
+        "longName": "Dornbusch",
+        "displayName": "Dor",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "er-1",
+        "longName": "Enrichment 1",
+        "displayName": "er-1",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [
+      {
+       "type": "LESSON_INFO",
+       "text": "Geo/NaWi"
+      }
+     ],
+     "lessonText": "",
+     "lessonInfo": "Geo/NaWi",
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    }
+   ],
+   "backEntries": []
+  },
+  {
+   "date": "2026-08-25",
+   "resourceType": "STUDENT",
+   "resource": {
+    "id": 1001,
+    "shortName": "MusterA",
+    "longName": "Mustermann",
+    "displayName": ""
+   },
+   "status": "REGULAR",
+   "dayEntries": [],
+   "gridEntries": [
+    {
+     "ids": [
+      2987648
+     ],
+     "duration": {
+      "start": "2026-08-25T08:00",
+      "end": "2026-08-25T23:59"
+     },
+     "type": "EVENT",
+     "status": "CHANGED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [
+      "NOTES"
+     ],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Eng",
+        "longName": "Engelhardt",
+        "displayName": "Eng",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "INFO",
+        "status": "REGULAR",
+        "shortName": "Kennenlernwoche",
+        "longName": "Kennenlernwoche",
+        "displayName": "Kennenlernwoche",
+        "displayNameLabel": null
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "ADDED",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [
+      {
+       "type": "LESSON_INFO",
+       "text": "Kennenlernwoche"
+      }
+     ],
+     "lessonText": "",
+     "lessonInfo": "Kennenlernwoche",
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2883379,
+      2883382
+     ],
+     "duration": {
+      "start": "2026-08-25T08:00",
+      "end": "2026-08-25T09:35"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Fal",
+        "longName": "Falk",
+        "displayName": "Fal",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "ku",
+        "longName": "Kunst",
+        "displayName": "ku",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 103",
+        "longName": "Klassenraum",
+        "displayName": "R 103",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2961125,
+      2961128
+     ],
+     "duration": {
+      "start": "2026-08-25T09:50",
+      "end": "2026-08-25T11:25"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [
+      "NOTES"
+     ],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Gro",
+        "longName": "Groth",
+        "displayName": "Gro",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      },
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Hen",
+        "longName": "Hennig",
+        "displayName": "Hen",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "er-2",
+        "longName": "Enrichment 2",
+        "displayName": "er-2",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 201",
+        "longName": "Klassenraum",
+        "displayName": "R 201",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [
+      {
+       "type": "LESSON_INFO",
+       "text": "Musik"
+      }
+     ],
+     "lessonText": "",
+     "lessonInfo": "Musik",
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2915953
+     ],
+     "duration": {
+      "start": "2026-08-25T11:35",
+      "end": "2026-08-25T12:20"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CHANGED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": null,
+       "removed": {
+        "type": "TEACHER",
+        "status": "REMOVED",
+        "shortName": "Cra",
+        "longName": "Cramer",
+        "displayName": "Cra",
+        "displayNameLabel": "NAME"
+       }
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "Pause",
+        "longName": "Mittagspause",
+        "displayName": "Pause",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": null,
+       "removed": {
+        "type": "ROOM",
+        "status": "REMOVED",
+        "shortName": "R 102",
+        "longName": "R 102",
+        "displayName": "R 102",
+        "displayNameLabel": "NAME"
+       }
+      }
+     ],
+     "position4": [
+      {
+       "current": null,
+       "removed": {
+        "type": "CLASS",
+        "status": "REMOVED",
+        "shortName": "5b",
+        "longName": "+Engelhardt/Bodenstein - R 101",
+        "displayName": "5b",
+        "displayNameLabel": "NAME"
+       }
+      }
+     ],
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2849851
+     ],
+     "duration": {
+      "start": "2026-08-25T12:25",
+      "end": "2026-08-25T13:10"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Bod",
+        "longName": "Bodenstein",
+        "displayName": "Bod",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "en",
+        "longName": "Englisch",
+        "displayName": "en",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2904364
+     ],
+     "duration": {
+      "start": "2026-08-25T13:20",
+      "end": "2026-08-25T14:05"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Hen",
+        "longName": "Hennig",
+        "displayName": "Hen",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "mu",
+        "longName": "Musik",
+        "displayName": "mu",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 202",
+        "longName": "Klassenraum",
+        "displayName": "R 202",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2894542
+     ],
+     "duration": {
+      "start": "2026-08-25T14:10",
+      "end": "2026-08-25T14:55"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Eng",
+        "longName": "Engelhardt",
+        "displayName": "Eng",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "ma",
+        "longName": "Mathematik",
+        "displayName": "ma",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    }
+   ],
+   "backEntries": []
+  },
+  {
+   "date": "2026-08-26",
+   "resourceType": "STUDENT",
+   "resource": {
+    "id": 1001,
+    "shortName": "MusterA",
+    "longName": "Mustermann",
+    "displayName": ""
+   },
+   "status": "REGULAR",
+   "dayEntries": [],
+   "gridEntries": [
+    {
+     "ids": [
+      2987651
+     ],
+     "duration": {
+      "start": "2026-08-26T00:00",
+      "end": "2026-08-26T23:59"
+     },
+     "type": "EVENT",
+     "status": "CHANGED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [
+      "NOTES"
+     ],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Eng",
+        "longName": "Engelhardt",
+        "displayName": "Eng",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "INFO",
+        "status": "REGULAR",
+        "shortName": "Kennenlernwoche",
+        "longName": "Kennenlernwoche",
+        "displayName": "Kennenlernwoche",
+        "displayNameLabel": null
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "ADDED",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [
+      {
+       "type": "LESSON_INFO",
+       "text": "Kennenlernwoche"
+      }
+     ],
+     "lessonText": "",
+     "lessonInfo": "Kennenlernwoche",
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2928838
+     ],
+     "duration": {
+      "start": "2026-08-26T08:00",
+      "end": "2026-08-26T08:45"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Ilg",
+        "longName": "Ilgner",
+        "displayName": "Ilg",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "re",
+        "longName": "Religion (Evangelisch)",
+        "displayName": "re",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "Aula",
+        "longName": "Klassenraum",
+        "displayName": "Aula",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2906792
+     ],
+     "duration": {
+      "start": "2026-08-26T08:50",
+      "end": "2026-08-26T09:35"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [
+      "NOTES"
+     ],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Dor",
+        "longName": "Dornbusch",
+        "displayName": "Dor",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "nw",
+        "longName": "Naturwissenschaften",
+        "displayName": "nw",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "Halle",
+        "longName": "Klassenraum",
+        "displayName": "Halle",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [
+      {
+       "type": "LESSON_INFO",
+       "text": "NaWi"
+      }
+     ],
+     "lessonText": "",
+     "lessonInfo": "NaWi",
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2936408,
+      2936411
+     ],
+     "duration": {
+      "start": "2026-08-26T09:50",
+      "end": "2026-08-26T11:25"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Jung",
+        "longName": "Jung",
+        "displayName": "Jung",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      },
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Kuhn",
+        "longName": "Kuhnert",
+        "displayName": "Kuhn",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "sp",
+        "longName": "Sport",
+        "displayName": "sp",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 301",
+        "longName": "Klassenraum",
+        "displayName": "R 301",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2915956
+     ],
+     "duration": {
+      "start": "2026-08-26T11:35",
+      "end": "2026-08-26T12:20"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Cra",
+        "longName": "Cramer",
+        "displayName": "Cra",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "Pause",
+        "longName": "Mittagspause",
+        "displayName": "Pause",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 102",
+        "longName": "R 102",
+        "displayName": "R 102",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2877865
+     ],
+     "duration": {
+      "start": "2026-08-26T12:25",
+      "end": "2026-08-26T13:10"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [
+      "NOTES"
+     ],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Eng",
+        "longName": "Engelhardt",
+        "displayName": "Eng",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "gw",
+        "longName": "Gesellschaftswissenschaften",
+        "displayName": "gw",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [
+      {
+       "type": "LESSON_INFO",
+       "text": "Geo/Geschi"
+      }
+     ],
+     "lessonText": "",
+     "lessonInfo": "Geo/Geschi",
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2849854
+     ],
+     "duration": {
+      "start": "2026-08-26T13:20",
+      "end": "2026-08-26T14:05"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "CANCELLED",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 500,
+     "layoutWidth": 500,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Bod",
+        "longName": "Bodenstein",
+        "displayName": "Bod",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "en",
+        "longName": "Englisch",
+        "displayName": "en",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    }
+   ],
+   "backEntries": []
+  },
+  {
+   "date": "2026-09-04",
+   "resourceType": "STUDENT",
+   "resource": {
+    "id": 1001,
+    "shortName": "MusterA",
+    "longName": "Mustermann",
+    "displayName": ""
+   },
+   "status": "REGULAR",
+   "dayEntries": [],
+   "gridEntries": [
+    {
+     "ids": [
+      2906804,
+      2906807
+     ],
+     "duration": {
+      "start": "2026-09-04T08:00",
+      "end": "2026-09-04T09:35"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "REGULAR",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 1,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [
+      "NOTES"
+     ],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Dor",
+        "longName": "Dornbusch",
+        "displayName": "Dor",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "nw",
+        "longName": "Naturwissenschaften",
+        "displayName": "nw",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "Halle",
+        "longName": "Klassenraum",
+        "displayName": "Halle",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [
+      {
+       "type": "LESSON_INFO",
+       "text": "NaWi"
+      }
+     ],
+     "lessonText": "",
+     "lessonInfo": "NaWi",
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2894563
+     ],
+     "duration": {
+      "start": "2026-09-04T09:50",
+      "end": "2026-09-04T10:35"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "REGULAR",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 2,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Eng",
+        "longName": "Engelhardt",
+        "displayName": "Eng",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "ma",
+        "longName": "Mathematik",
+        "displayName": "ma",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2877880
+     ],
+     "duration": {
+      "start": "2026-09-04T10:40",
+      "end": "2026-09-04T11:25"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "REGULAR",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 3,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [
+      "HOMEWORK",
+      "NOTES"
+     ],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Eng",
+        "longName": "Engelhardt",
+        "displayName": "Eng",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "gw",
+        "longName": "Gesellschaftswissenschaften",
+        "displayName": "gw",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [
+      {
+       "type": "LESSON_INFO",
+       "text": "Geo/Geschi"
+      }
+     ],
+     "lessonText": "",
+     "lessonInfo": "Geo/Geschi",
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2915977
+     ],
+     "duration": {
+      "start": "2026-09-04T11:35",
+      "end": "2026-09-04T12:20"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "REGULAR",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 4,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Cra",
+        "longName": "Cramer",
+        "displayName": "Cra",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "Pause",
+        "longName": "Mittagspause",
+        "displayName": "Pause",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 102",
+        "longName": "R 102",
+        "displayName": "R 102",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2836069
+     ],
+     "duration": {
+      "start": "2026-09-04T12:25",
+      "end": "2026-09-04T13:10"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "REGULAR",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 5,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Ahl",
+        "longName": "Ahlers",
+        "displayName": "Ahl",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "de",
+        "longName": "Deutsch",
+        "displayName": "de",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 101",
+        "longName": "Klassenraum",
+        "displayName": "R 101",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2904373
+     ],
+     "duration": {
+      "start": "2026-09-04T13:20",
+      "end": "2026-09-04T14:05"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "REGULAR",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 6,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Hen",
+        "longName": "Hennig",
+        "displayName": "Hen",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "mu",
+        "longName": "Musik",
+        "displayName": "mu",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 201",
+        "longName": "Klassenraum",
+        "displayName": "R 201",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    },
+    {
+     "ids": [
+      2963117
+     ],
+     "duration": {
+      "start": "2026-09-04T14:10",
+      "end": "2026-09-04T14:55"
+     },
+     "type": "NORMAL_TEACHING_PERIOD",
+     "status": "REGULAR",
+     "statusDetail": null,
+     "name": null,
+     "layoutStartPosition": 0,
+     "layoutWidth": 1000,
+     "layoutGroup": 7,
+     "color": "bfc8cf",
+     "notesAll": "",
+     "icons": [],
+     "position1": [
+      {
+       "current": {
+        "type": "TEACHER",
+        "status": "REGULAR",
+        "shortName": "Hen",
+        "longName": "Hennig",
+        "displayName": "Hen",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position2": [
+      {
+       "current": {
+        "type": "SUBJECT",
+        "status": "REGULAR",
+        "shortName": "er-2",
+        "longName": "Enrichment 2",
+        "displayName": "er-2",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position3": [
+      {
+       "current": {
+        "type": "ROOM",
+        "status": "REGULAR",
+        "shortName": "R 201",
+        "longName": "Klassenraum",
+        "displayName": "R 201",
+        "displayNameLabel": "NAME"
+       },
+       "removed": null
+      }
+     ],
+     "position4": null,
+     "position5": null,
+     "position6": null,
+     "position7": null,
+     "texts": [],
+     "lessonText": "",
+     "lessonInfo": null,
+     "substitutionText": "",
+     "userName": null,
+     "moved": null,
+     "durationTotal": null,
+     "link": null
+    }
+   ],
+   "backEntries": []
+  }
+ ],
+ "errors": []
+}

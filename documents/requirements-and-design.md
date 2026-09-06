@@ -612,8 +612,9 @@ self-contained script rather than a step inside the PowerShell build.
 - Unit tests for configuration loading and validation, including the `password_env`
   indirection and the unknown-profile error.
 - Unit tests for the mapping layer against recorded, anonymised WebUntis payload fixtures
-  captured by `scripts/probe_endpoints.py` from **both** tenants (they exist as of
-  2026-09-06 and still need anonymising before they enter the repository) — this is where most of the
+  captured by `scripts/probe_endpoints.py`. `tests/fixtures/timetable_entries.json` is the
+  first of them: five days from a live tenant — an empty day, a cancellation, a
+  substitution, a school event and an ordinary day — with every person and room renamed — this is where most of the
   fragility lives, and having two tenants in the fixture set is what protects the domain
   model against per-school payload differences.
 - Explicit mapping tests for the wire-format quirks of section 5.3: numeric vs. string
@@ -664,8 +665,10 @@ What remains open:
    capabilities), per-profile client with its own cookie jar, lazy session behind a lock,
    the TTL-plus-retry lifetime of ADR-011, and capability gating (ADR-010). Verified
    against both real tenants: the capability sets differ exactly as section 5.4 describes.
-3. `get_timetable_day` and `get_timetable_week` on `view/v1/timetable/entries` (ADR-009),
-   with the mapping tests built on the anonymised spike payloads.
+3. `get_timetable_day` and `get_timetable_week` — done, 2026-09-06. Both on
+   `view/v1/timetable/entries` (ADR-009), with the mapping layer and its tests built on an
+   anonymised payload captured from a real tenant
+   (`tests/fixtures/timetable_entries.json`). Verified against both schools.
 4. `get_absences` — the payload is already understood and both tenants serve it.
 5. `get_appointments` from `type: EVENT`, with the calendar endpoint as a secondary source.
 6. `get_messages`, including the capability check that makes it a clean "not available" on
