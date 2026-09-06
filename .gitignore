@@ -1,0 +1,28 @@
+# --- secrets -------------------------------------------------------------
+# Real profile configuration holds plaintext WebUntis credentials.
+config/profiles.toml
+config/*.local.toml
+.env
+
+# --- protocol spike output ----------------------------------------------
+# Raw WebUntis responses: real names, real timetables. Never commit.
+probe-output/
+
+# --- python --------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- editors / os --------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,24 @@
+# Copy to config/profiles.toml and fill in real values.
+# config/profiles.toml is git-ignored because it holds plaintext credentials.
+#
+# The path can be overridden with the UNTIS_MCP_CONFIG environment variable.
+
+[[profiles]]
+name        = "anna"
+description = "Anna, Gymnasium Musterstadt"
+# Base URL of the WebUntis server the school is hosted on, without a trailing path.
+# You can read it off the browser address bar when you are logged in.
+server      = "https://ajax.webuntis.com"
+# The school identifier used in the WebUntis URL (?school=...), not the display name.
+school      = "gym-musterstadt"
+username    = "anna.mustermann"
+password    = "change-me"
+
+[[profiles]]
+name         = "ben"
+description  = "Ben, Realschule Beispieldorf"
+server       = "https://herakles.webuntis.com"
+school       = "rs-beispieldorf"
+username     = "ben.mustermann"
+# Instead of an inline password, name an environment variable holding it.
+password_env = "UNTIS_BEN_PASSWORD"
