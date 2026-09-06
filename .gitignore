@@ -8,6 +8,10 @@ config/*.local.toml
 # Raw WebUntis responses: real names, real timetables. Never commit.
 probe-output/
 
+# --- build output --------------------------------------------------------
+# Image tarballs are ~70 MB and are rebuilt from source.
+*.tar
+
 # --- python --------------------------------------------------------------
 __pycache__/
 *.py[cod]

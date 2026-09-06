@@ -1,0 +1,21 @@
+# Credentials and captured school data must never reach a layer (NFR-07).
+config/
+probe-output/
+.env
+
+# Everything the runtime does not need.
+.git/
+.github/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+tests/
+documents/
+scripts/
+compose.yaml
+Dockerfile
+.dockerignore
+.gitignore

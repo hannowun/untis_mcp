@@ -1,0 +1,45 @@
+# Deployment on the Raspberry Pi (section 7.1).
+#
+# The server holds credentials for both schools and performs no authorization of its own,
+# so exposure is constrained here rather than in the code: the port is published on one
+# interface only, and the container runs unprivileged with a read-only root filesystem.
+
+services:
+  untis-mcp:
+    image: ${UNTIS_MCP_IMAGE:-untis-mcp:latest}
+    container_name: untis-mcp
+    restart: unless-stopped
+
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      UNTIS_MCP_TRANSPORT: http
+      UNTIS_MCP_HOST: 0.0.0.0
+      UNTIS_MCP_PORT: "8000"
+      UNTIS_MCP_LOG_LEVEL: ${UNTIS_MCP_LOG_LEVEL:-INFO}
+      # Optional bearer token (ADR-006). Leave unset to run without one.
+      UNTIS_MCP_AUTH_TOKEN: ${UNTIS_MCP_AUTH_TOKEN:-}
+      # Passwords named by password_env in profiles.toml are injected here.
+      UNTIS_EMIL_PASSWORD: ${UNTIS_EMIL_PASSWORD:-}
+      UNTIS_THEO_PASSWORD: ${UNTIS_THEO_PASSWORD:-}
+
+    # Bind to the loopback by default; set UNTIS_MCP_BIND to the Pi's LAN address to reach
+    # it from another machine. Never publish this on 0.0.0.0 behind a port forward.
+    ports:
+      - "${UNTIS_MCP_BIND:-127.0.0.1}:${UNTIS_MCP_EXPOSED_PORT:-8000}:8000"
+
+    volumes:
+      - ./config/profiles.toml:/app/config/profiles.toml:ro
+
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

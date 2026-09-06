@@ -10,8 +10,8 @@ school messages instead of logging into two portals.
 
 > **Status:** early development. The requirements, design and architecture are written down
 > in [`documents/requirements-and-design.md`](documents/requirements-and-design.md).
-> The endpoints are verified against both real schools and every tool works. What remains
-> is the container, the build script and the deployment script.
+> The endpoints are verified against both real schools, every tool works, and the container
+> builds and runs for both `linux/amd64` and `linux/arm64`.
 
 ---
 
@@ -133,17 +133,30 @@ payloads before committing any of them as test fixtures.
 The server is built as a container on a Windows/amd64 machine and runs on a Raspberry Pi
 (arm64). A single `docker buildx` build covers both architectures.
 
-Build on Windows:
+Build on Windows — cross-builds for the Pi and writes a tarball:
 
 ```powershell
-./scripts/build.ps1 -Tag untis-mcp:latest -Platform linux/arm64
+./scripts/build.ps1
 ```
 
-Deploy on the Raspberry Pi:
+Copy it across, then on the Raspberry Pi:
 
 ```bash
-./scripts/deploy.sh
+./scripts/deploy.sh --tarball ~/untis-mcp/untis-mcp-arm64.tar
 ```
+
+With a registry instead of a tarball:
+
+```powershell
+./scripts/build.ps1 -Tag ghcr.io/you/untis-mcp:latest -Output registry
+```
+
+```bash
+./scripts/deploy.sh --pull
+```
+
+`compose.yaml` publishes the port on `127.0.0.1` by default; set `UNTIS_MCP_BIND` to the
+Pi's LAN address to reach it from another machine.
 
 The configuration file is mounted at runtime and never baked into the image. See
 [section 6 of the design document](documents/requirements-and-design.md#7-deployment) for

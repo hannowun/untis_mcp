@@ -556,7 +556,16 @@ tests/
 
 ### 7.1 Container
 
-- Base image `python:3.13-slim`, multi-stage, non-root runtime user.
+- Base image `python:3.13-slim`, multi-stage, non-root runtime user (uid 10001).
+- Hardened in `compose.yaml` rather than in code, because that is where exposure is decided:
+  read-only root filesystem, all capabilities dropped, `no-new-privileges`, and the port
+  published on one interface only.
+- `tzdata` is installed deliberately: without it the container runs on UTC, and a server
+  answering "what does my daughter have today?" has to agree with the school about the date.
+- The healthcheck opens a TCP connection to the port, because the MCP endpoint itself needs
+  a session handshake. Its start period is 90 seconds — importing the server is slow on
+  modest hardware, and reporting a container that is merely still starting as failed is a
+  worse error than noticing a real failure a minute late.
 - Dependencies installed from `uv.lock` with `uv sync --frozen --no-dev`.
 - Configuration is **mounted**, never baked in: `/app/config/profiles.toml` as a read-only
   bind mount, path overridable via `UNTIS_MCP_CONFIG`.
@@ -683,7 +692,10 @@ What remains open:
    the inbox a clean "not available" on the tenant that forbids it, while the announcements
    work there — which is the concrete payoff of keeping them separate (section 2.2).
    Announcements arrive as HTML and are converted to text.
-7. Dockerfile, `compose.yaml`, `build.ps1`, `deploy.sh`.
+7. Dockerfile, `compose.yaml`, `build.ps1`, `deploy.sh` — done, 2026-09-06. The image was
+   built for both architectures and run: the `linux/arm64` image was started under emulation
+   and answered MCP calls, which is as close to the Pi as this machine gets. Cross-building
+   for arm64 takes about three minutes, so ADR-008's assumption holds.
 
 The order changed from the original: messages moved to the end because their availability is
 now a known per-profile fact rather than an open question, and appointments moved forward
