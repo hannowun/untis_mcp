@@ -111,13 +111,15 @@ try {
     switch ($Output) {
         "registry" {
             Write-Host "Pushed $Tag." -ForegroundColor Green
-            Write-Host "On the Pi: docker compose pull && docker compose up -d"
+            Write-Host "On the Pi:       ./scripts/deploy.sh --pull"
+            Write-Host "Its .env needs:  UNTIS_MCP_IMAGE=$Tag"
         }
         "tarball" {
             $size = [math]::Round((Get-Item $File).Length / 1MB, 1)
             Write-Host "Wrote $File ($size MB)." -ForegroundColor Green
             Write-Host "Copy it across:  scp `"$File`" pi@raspberrypi:~/untis-mcp/"
             Write-Host "Then on the Pi:  ./scripts/deploy.sh --tarball ~/untis-mcp/$(Split-Path -Leaf $File)"
+            Write-Host "Its .env needs:  UNTIS_MCP_IMAGE=$Tag  (see .env.example)"
         }
         "load" {
             Write-Host "Loaded $Tag into the local Docker." -ForegroundColor Green

@@ -570,9 +570,14 @@ tests/
 - Configuration is **mounted**, never baked in: `/app/config/profiles.toml` as a read-only
   bind mount, path overridable via `UNTIS_MCP_CONFIG`.
 - Exposes the HTTP transport port (default 8000).
-- `compose.yaml` for the Raspberry Pi: image reference, config mount, port binding
-  restricted to the LAN interface, `restart: unless-stopped`, `TZ`, and optional secret
-  environment variables for the `password_env` indirection.
+- `compose.yaml` for the Raspberry Pi: image reference, config mount, port binding,
+  `restart: unless-stopped` and `TZ`. Every value that differs between machines comes from
+  a `.env` file next to it — image, timezone, log level, bearer token, and the three that
+  decide exposure: `UNTIS_MCP_BIND` (host interface), `UNTIS_MCP_EXPOSED_PORT` (host port)
+  and `UNTIS_MCP_PORT` (inside the container).
+- The whole env file is also passed into the container via `env_file`, which is what carries
+  the secrets behind the `password_env` indirection without naming a specific child in a
+  file that is under version control.
 
 ### 7.2 Build and deploy workflow (NFR-05, NFR-06)
 
@@ -583,8 +588,15 @@ architectures are covered by a single `docker buildx` build:
   emulation for arm64, builds `linux/arm64` (optionally also `linux/amd64` for local
   testing), and either pushes to a registry or exports an image tarball. Parameters for tag,
   platform list and output mode.
-- `scripts/deploy.sh` (Bash, Raspberry Pi): pulls the image or loads the transferred
-  tarball, verifies that the configuration file is present, and restarts the compose stack.
+- `scripts/deploy.sh` (Bash, Raspberry Pi): pulls the image, loads the transferred tarball
+  or builds locally, and restarts the compose stack. Before any of that it validates the
+  two files that decide whether the result is usable — `config/profiles.toml` and `.env` —
+  rather than leaving an unset compose variable to become an empty string and a container
+  listening somewhere nobody expected. It rejects a bind address the machine does not have
+  (listing the ones it does), a port that is not a port number, and a `password_env` a
+  profile names but the env file does not set; it warns when the binding reaches past the
+  loopback with no bearer token configured. The same checks run for a plain deploy and for
+  `--build`.
 
 Two transport paths between the machines, both supported by the scripts:
 
@@ -607,7 +619,10 @@ self-contained script rather than a step inside the PowerShell build.
   on the host.
 - The server performs no authorization: any client that can reach the HTTP port can read
   both children's data. Mitigations: bind to a private interface, never port-forward, and
-  optionally require a bearer token (ADR-006).
+  optionally require a bearer token (ADR-006). Which interface that is, is a deployment
+  decision and therefore lives in `.env`, not in code — the same file also holds the token
+  and any `password_env` secrets, so it is git-ignored, excluded from the build context and
+  permission-restricted by `deploy.sh` alongside the profile configuration.
 - Tool output is passed to an AI assistant and therefore potentially to a third-party model
   provider. This is accepted and is the explicit purpose of the project, and it is the
   reason the scope stays read-only and minimal.

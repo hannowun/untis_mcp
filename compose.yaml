@@ -1,8 +1,12 @@
 # Deployment on the Raspberry Pi (section 7.1).
 #
 # The server holds credentials for both schools and performs no authorization of its own,
-# so exposure is constrained here rather than in the code: the port is published on one
-# interface only, and the container runs unprivileged with a read-only root filesystem.
+# so exposure is constrained here rather than in the code: the port is published on the one
+# interface named in .env, and the container runs unprivileged with a read-only root
+# filesystem.
+#
+# Everything variable lives in .env next to this file — see .env.example, and use
+# scripts/deploy.sh, which checks that file before starting anything.
 
 services:
   untis-mcp:
@@ -10,22 +14,32 @@ services:
     container_name: untis-mcp
     restart: unless-stopped
 
+    # The whole env file is passed into the container. That is what lets a profile name its
+    # own password variable (password_env) without anyone editing this file; the explicit
+    # entries below still win over it. required: false keeps `docker compose ps` and
+    # `logs` usable on a machine that has no .env yet.
+    env_file:
+      - path: ${UNTIS_MCP_ENV_FILE:-.env}
+        required: false
+
     environment:
       TZ: ${TZ:-Europe/Berlin}
+      # Pinned rather than inherited from the env file: these describe the inside of the
+      # container, not the deployment, and getting them from .env by accident would move
+      # the server away from where the port publishing and the healthcheck expect it.
+      UNTIS_MCP_CONFIG: /app/config/profiles.toml
       UNTIS_MCP_TRANSPORT: http
       UNTIS_MCP_HOST: 0.0.0.0
-      UNTIS_MCP_PORT: "8000"
+      UNTIS_MCP_PORT: ${UNTIS_MCP_PORT:-8000}
       UNTIS_MCP_LOG_LEVEL: ${UNTIS_MCP_LOG_LEVEL:-INFO}
       # Optional bearer token (ADR-006). Leave unset to run without one.
       UNTIS_MCP_AUTH_TOKEN: ${UNTIS_MCP_AUTH_TOKEN:-}
-      # Passwords named by password_env in profiles.toml are injected here.
-      UNTIS_EMIL_PASSWORD: ${UNTIS_EMIL_PASSWORD:-}
-      UNTIS_THEO_PASSWORD: ${UNTIS_THEO_PASSWORD:-}
 
-    # Bind to the loopback by default; set UNTIS_MCP_BIND to the Pi's LAN address to reach
-    # it from another machine. Never publish this on 0.0.0.0 behind a port forward.
+    # <interface>:<host port>:<container port>. The default is the loopback, so a stack
+    # started without an env file is reachable from the Pi and nowhere else. Publishing on
+    # a second interface as well needs a compose.override.yaml with its own ports entry.
     ports:
-      - "${UNTIS_MCP_BIND:-127.0.0.1}:${UNTIS_MCP_EXPOSED_PORT:-8000}:8000"
+      - "${UNTIS_MCP_BIND:-127.0.0.1}:${UNTIS_MCP_EXPOSED_PORT:-8000}:${UNTIS_MCP_PORT:-8000}"
 
     volumes:
       - ./config/profiles.toml:/app/config/profiles.toml:ro

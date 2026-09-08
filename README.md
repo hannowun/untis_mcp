@@ -133,6 +133,38 @@ payloads before committing any of them as test fixtures.
 The server is built as a container on a Windows/amd64 machine and runs on a Raspberry Pi
 (arm64). A single `docker buildx` build covers both architectures.
 
+### On the Pi: `.env`
+
+Everything about the deployment that is not the same on every machine lives in a `.env`
+file next to `compose.yaml` — above all **which interface and port the server is reachable
+on**. It is git-ignored and read by both `compose.yaml` and `scripts/deploy.sh`, which
+refuses to start without it.
+
+```bash
+cp .env.example .env && chmod 600 .env
+```
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `UNTIS_MCP_BIND` | `127.0.0.1` | Host interface the port is published on: the loopback, one address of the Pi, or `0.0.0.0` for all of them. |
+| `UNTIS_MCP_EXPOSED_PORT` | `8000` | Host port clients connect to. |
+| `UNTIS_MCP_PORT` | `8000` | Port the server listens on inside the container. |
+| `UNTIS_MCP_IMAGE` | `untis-mcp:latest` | Image to run — a local tag or a registry reference. |
+| `TZ` | `Europe/Berlin` | Timezone the school day is interpreted in. |
+| `UNTIS_MCP_LOG_LEVEL` | `INFO` | Log verbosity. |
+| `UNTIS_MCP_AUTH_TOKEN` | empty | Bearer token clients must present. |
+
+Any other variable in the file is passed into the container as well, which is how a profile
+using `password_env` gets its password.
+
+`deploy.sh` checks all of this before it starts anything: that the required variables are
+set, that the ports are port numbers, that `UNTIS_MCP_BIND` is an address this machine
+actually has — it lists the available ones if not — and that every `password_env` named in
+`profiles.toml` has a value. It warns when the binding reaches past the loopback without a
+token set.
+
+### Build and deploy
+
 Build on Windows — cross-builds for the Pi and writes a tarball:
 
 ```powershell
@@ -155,8 +187,11 @@ With a registry instead of a tarball:
 ./scripts/deploy.sh --pull
 ```
 
-`compose.yaml` publishes the port on `127.0.0.1` by default; set `UNTIS_MCP_BIND` to the
-Pi's LAN address to reach it from another machine.
+To build on the Pi itself instead — the fallback if emulated cross-builds ever break:
+
+```bash
+./scripts/deploy.sh --build
+```
 
 The configuration file is mounted at runtime and never baked into the image. See
 [section 6 of the design document](documents/requirements-and-design.md#7-deployment) for
@@ -165,9 +200,10 @@ the registry and tarball transfer paths.
 ### Security note
 
 The server holds credentials for all configured schools and performs **no authorization of
-its own** — any client that can reach the HTTP port can read every profile. Bind it to your
-LAN or VPN interface only, never port-forward it from the internet, and consider setting
-`UNTIS_MCP_AUTH_TOKEN`.
+its own** — any client that can reach the HTTP port can read every profile. `UNTIS_MCP_BIND`
+in `.env` is therefore the real access control: point it at your LAN or VPN interface only,
+never port-forward it from the internet, and set `UNTIS_MCP_AUTH_TOKEN` as soon as it is
+anything other than `127.0.0.1`.
 
 ---
 

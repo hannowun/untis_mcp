@@ -1,0 +1,10 @@
+# Development is on Windows, the deployment target is Linux. Anything the Pi executes or
+# parses stays LF in the working copy too, so copying a file across with scp instead of
+# cloning cannot produce a script whose shebang ends in \r.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.yaml      text eol=lf
+*.toml      text eol=lf
+.env.example text eol=lf
+
+*.ps1       text eol=crlf
