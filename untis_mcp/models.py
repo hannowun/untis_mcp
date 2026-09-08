@@ -8,8 +8,41 @@ from __future__ import annotations
 
 import datetime as dt
 from enum import StrEnum
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PlainSerializer, WithJsonSchema
+
+# WebUntis reports school-local wall-clock times without a zone, and that is what these
+# models carry. Pydantic would describe a `datetime.time` as `format: "time"`, but MCP
+# clients validate that as the RFC 3339 *full-time* production, where an offset is
+# mandatory — so the zoneless "08:00:00" we emit is rejected before the assistant ever sees
+# the timetable. Describe the string by pattern instead, and say in the schema that it is
+# local time rather than pretending to a zone we do not know.
+LocalTime = Annotated[
+    dt.time,
+    PlainSerializer(lambda value: value.strftime("%H:%M"), return_type=str, when_used="json"),
+    WithJsonSchema(
+        {
+            "type": "string",
+            "pattern": r"^\d{2}:\d{2}$",
+            "description": "Local time at the school, 24h, e.g. '08:00'. No time zone.",
+        }
+    ),
+]
+
+LocalDateTime = Annotated[
+    dt.datetime,
+    PlainSerializer(
+        lambda value: value.strftime("%Y-%m-%dT%H:%M"), return_type=str, when_used="json"
+    ),
+    WithJsonSchema(
+        {
+            "type": "string",
+            "pattern": r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$",
+            "description": "Local date and time, e.g. '2026-09-07T08:00'. No time zone.",
+        }
+    ),
+]
 
 
 class ProfileSummary(BaseModel):
@@ -65,8 +98,8 @@ class Lesson(BaseModel):
     """One entry in the timetable: a lesson, an exam slot or a school event."""
 
     date: dt.date
-    start: dt.time | None = Field(default=None, description="Local start time, 24h.")
-    end: dt.time | None = None
+    start: LocalTime | None = Field(default=None, description="Local start time, 24h.")
+    end: LocalTime | None = None
     subject: str | None = Field(default=None, description="Short subject name, e.g. 'de'.")
     subject_long: str | None = Field(default=None, description="Full subject name.")
     teachers: list[str] = Field(default_factory=list, description="Who actually teaches it.")
@@ -112,8 +145,8 @@ class Absence(BaseModel):
 
     start_date: dt.date
     end_date: dt.date
-    start_time: dt.time | None = Field(default=None, description="Local start time, 24h.")
-    end_time: dt.time | None = None
+    start_time: LocalTime | None = Field(default=None, description="Local start time, 24h.")
+    end_time: LocalTime | None = None
     is_excused: bool = Field(
         description="Whether the school has accepted an excuse for this absence."
     )
@@ -161,8 +194,8 @@ class Appointment(BaseModel):
     """A school event or calendar entry — the "Meine Termine" view of WebUntis."""
 
     date: dt.date
-    start: dt.time | None = None
-    end: dt.time | None = None
+    start: LocalTime | None = None
+    end: LocalTime | None = None
     title: str | None = Field(
         default=None,
         description=(
@@ -204,7 +237,7 @@ class Message(BaseModel):
     subject: str | None = None
     body: str | None = Field(default=None, description="The message text, markup removed.")
     sender: str | None = Field(default=None, description="Who sent it, if the school records it.")
-    sent: dt.datetime | None = None
+    sent: LocalDateTime | None = None
     is_read: bool | None = Field(
         default=None, description="Null when the school does not report a read state."
     )

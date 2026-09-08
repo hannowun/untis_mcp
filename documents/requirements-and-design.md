@@ -223,6 +223,16 @@ gives the assistant a typed contract instead of loose dictionaries. The same val
 delivers NFR-08 (fail fast on bad configuration) almost for free, and `SecretStr` for
 passwords supports FR-08 (no secrets in logs or reprs).
 
+**Refinement from operation:** the derived schema is *enforced* — an MCP client rejects the
+whole result when it does not fit — so the models must describe what we can actually emit.
+`datetime.time` and `datetime.datetime` are described by Pydantic as `format: "time"` and
+`format: "date-time"`, which clients validate as RFC 3339, where a zone offset is
+mandatory; WebUntis reports school-local wall-clock times with no zone. Times and datetimes
+in tool results therefore use the `LocalTime` / `LocalDateTime` annotations of `models.py`:
+still `datetime` objects inside the server, but described by pattern and emitted as `08:00`
+and `2026-09-07T08:00`. Inventing an offset was the alternative and was rejected — it would
+claim a precision (and a DST rule) the source data does not carry.
+
 ### ADR-005: Session handling — one cached, lazily created session per profile
 
 **Decision:** Sessions are created lazily on first use per profile, cached in memory,
