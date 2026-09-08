@@ -44,6 +44,13 @@ services:
     volumes:
       - ./config/profiles.toml:/app/config/profiles.toml:ro
 
+    # A bind mount carries the host's numeric ownership into the container, so the uid the
+    # server runs as has to be one that may read profiles.toml on the host — which is kept
+    # readable by its owner alone. The image's own user (10001) is not that owner, so the
+    # deploying user is used instead; deploy.sh checks that this value can actually read
+    # the file rather than letting it fail six restarts later.
+    user: ${UNTIS_MCP_RUN_AS:-1000:1000}
+
     read_only: true
     tmpfs:
       - /tmp

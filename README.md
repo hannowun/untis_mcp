@@ -150,6 +150,7 @@ cp .env.example .env && chmod 600 .env
 | `UNTIS_MCP_EXPOSED_PORT` | `8000` | Host port clients connect to. |
 | `UNTIS_MCP_PORT` | `8000` | Port the server listens on inside the container. |
 | `UNTIS_MCP_IMAGE` | `untis-mcp:latest` | Image to run — a local tag or a registry reference. |
+| `UNTIS_MCP_RUN_AS` | `1000:1000` | uid:gid the server runs as. Must be able to read `config/profiles.toml`, which a bind mount hands over with its host ownership intact — `stat -c '%u:%g' config/profiles.toml` prints the right value. |
 | `TZ` | `Europe/Berlin` | Timezone the school day is interpreted in. |
 | `UNTIS_MCP_LOG_LEVEL` | `INFO` | Log verbosity. |
 | `UNTIS_MCP_AUTH_TOKEN` | empty | Bearer token clients must present. |
@@ -159,9 +160,9 @@ using `password_env` gets its password.
 
 `deploy.sh` checks all of this before it starts anything: that the required variables are
 set, that the ports are port numbers, that `UNTIS_MCP_BIND` is an address this machine
-actually has — it lists the available ones if not — and that every `password_env` named in
-`profiles.toml` has a value. It warns when the binding reaches past the loopback without a
-token set.
+actually has — it lists the available ones if not — that `UNTIS_MCP_RUN_AS` can read the
+profile configuration, and that every `password_env` named in `profiles.toml` has a value.
+It warns when the binding reaches past the loopback without a token set.
 
 ### Build and deploy
 

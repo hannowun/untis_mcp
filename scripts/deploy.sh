@@ -151,6 +151,7 @@ need UNTIS_MCP_IMAGE        "the image to run, e.g. untis-mcp:latest"
 need UNTIS_MCP_BIND         "the host interface the port is published on"
 need UNTIS_MCP_EXPOSED_PORT "the host port MCP clients connect to"
 need UNTIS_MCP_PORT         "the port the server listens on inside the container"
+need UNTIS_MCP_RUN_AS       "uid:gid the container runs as, e.g. $(stat -c '%u:%g' "$CONFIG")"
 need TZ                     "the timezone school days are interpreted in"
 
 if [ ${#missing[@]} -gt 0 ]; then
@@ -173,6 +174,37 @@ for port_var in UNTIS_MCP_EXPOSED_PORT UNTIS_MCP_PORT; do
         warnings+=("$port_var is $port; publishing a port below 1024 needs a privileged docker daemon")
     fi
 done
+
+# The bind mount hands the host's numeric ownership to the container, so a uid that cannot
+# read profiles.toml here cannot read it in there either — and the server exits, is
+# restarted, and exits again, which reads like a broken image rather than a wrong number.
+run_as="${ENV_VARS[UNTIS_MCP_RUN_AS]}"
+if ! [[ "$run_as" =~ ^[0-9]+:[0-9]+$ ]]; then
+    problems+=(
+        "UNTIS_MCP_RUN_AS is '$run_as'; it must be a numeric uid:gid."
+        "  For this machine: UNTIS_MCP_RUN_AS=$(stat -c '%u:%g' "$CONFIG")"
+    )
+else
+    read -r config_uid config_gid config_mode < <(stat -c '%u %g %a' "$CONFIG")
+    config_mode="${config_mode: -3}"   # drop a setuid/sticky digit if stat printed four
+    readable=0
+    if [ "${run_as%%:*}" = "0" ]; then
+        readable=1                                                     # root reads anything
+    elif [ "${run_as%%:*}" = "$config_uid" ] && [ $(( ${config_mode:0:1} & 4 )) -ne 0 ]; then
+        readable=1
+    elif [ "${run_as##*:}" = "$config_gid" ] && [ $(( ${config_mode:1:1} & 4 )) -ne 0 ]; then
+        readable=1
+    elif [ $(( ${config_mode:2:1} & 4 )) -ne 0 ]; then
+        readable=1
+    fi
+    if [ "$readable" -eq 0 ]; then
+        problems+=(
+            "UNTIS_MCP_RUN_AS is $run_as, but that user cannot read $CONFIG"
+            "  (owner $config_uid:$config_gid, mode $config_mode). The container reads the file"
+            "  as this user, so set: UNTIS_MCP_RUN_AS=$config_uid:$config_gid"
+        )
+    fi
+fi
 
 # An address this machine does not have is the failure this check exists for: docker reports
 # it as "cannot assign requested address" long after everything else looked fine.

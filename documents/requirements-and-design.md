@@ -569,6 +569,12 @@ tests/
 - Dependencies installed from `uv.lock` with `uv sync --frozen --no-dev`.
 - Configuration is **mounted**, never baked in: `/app/config/profiles.toml` as a read-only
   bind mount, path overridable via `UNTIS_MCP_CONFIG`.
+- Which uid the container runs as is a deployment question, not an image one, because a
+  bind mount carries the host's numeric ownership through unchanged: the file is readable
+  by its owner alone on the host, so the image's own user (10001) cannot read it. The
+  compose service therefore runs as `UNTIS_MCP_RUN_AS` from `.env`, the deploying user.
+  Everything the image contains is world-readable and world-executable, so no other uid
+  depends on it.
 - Exposes the HTTP transport port (default 8000).
 - `compose.yaml` for the Raspberry Pi: image reference, config mount, port binding,
   `restart: unless-stopped` and `TZ`. Every value that differs between machines comes from
@@ -593,10 +599,10 @@ architectures are covered by a single `docker buildx` build:
   two files that decide whether the result is usable — `config/profiles.toml` and `.env` —
   rather than leaving an unset compose variable to become an empty string and a container
   listening somewhere nobody expected. It rejects a bind address the machine does not have
-  (listing the ones it does), a port that is not a port number, and a `password_env` a
-  profile names but the env file does not set; it warns when the binding reaches past the
-  loopback with no bearer token configured. The same checks run for a plain deploy and for
-  `--build`.
+  (listing the ones it does), a port that is not a port number, a `UNTIS_MCP_RUN_AS` that
+  could not read the profile configuration, and a `password_env` a profile names but the env
+  file does not set; it warns when the binding reaches past the loopback with no bearer
+  token configured. The same checks run for a plain deploy and for `--build`.
 
 Two transport paths between the machines, both supported by the scripts:
 
