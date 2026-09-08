@@ -358,6 +358,13 @@ def build_probes(
             note="the confirmed half of tool 1; klasseId is discovered from the timetable",
         ),
         Probe(
+            "homework",
+            "rest",
+            "/WebUntis/api/homeworks/lessons",
+            {"startDate": compact_start, "endDate": compact_end},
+            note="tool 8; the range matches dueDate, and there is no element parameter",
+        ),
+        Probe(
             "messages-inbox",
             "rest",
             "/WebUntis/api/rest/view/v1/messages",

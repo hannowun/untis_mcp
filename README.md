@@ -25,6 +25,7 @@ addresses, so one server instance serves all children.
 | `list_profiles` | Lists the configured profiles (names and descriptions, no credentials). |
 | `get_appointments` | Appointments and calendar entries stored in WebUntis. |
 | `get_absences` | Recorded absences with time span, reason and excuse status. |
+| `get_homework` | Homework set in the class register, by due date. |
 | `get_timetable_week` | The timetable for a given school week. |
 | `get_timetable_day` | The timetable for a given day. |
 | `get_messages` | Messages sent to the account through the WebUntis message centre. |

@@ -401,6 +401,7 @@ def test_probe_set_covers_the_endpoint_map():
     assert by_name["timetable-jsonrpc"].params["type"] == 5  # not personType 12
     assert by_name["absences"].params["studentId"] == STUDENT_ID
     assert by_name["exams"].params["klasseId"] == 331
+    assert by_name["homework"].params["endDate"] == "20260930"
     # weekly/data wants the Monday of the week, not the raw start date.
     monday = probe.build_probes(ctx, STUDENT_ID, None, date(2026, 9, 10), date(2026, 9, 30))
     assert {p.name: p for p in monday}["timetable-weekly-data"].params["date"] == "2026-09-07"

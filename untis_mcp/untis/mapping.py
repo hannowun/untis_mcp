@@ -24,6 +24,8 @@ from untis_mcp.models import (
     Appointments,
     AppointmentSource,
     EntryKind,
+    Homework,
+    HomeworkList,
     Lesson,
     LessonStatus,
     Message,
@@ -443,6 +445,131 @@ def _pick(entry: dict[str, Any], keys: tuple[str, ...]) -> Any:
         if entry.get(key):
             return entry[key]
     return None
+
+
+# ------------------------------------------------------------------------------- homework
+
+
+def parse_homework(
+    payload: Any,
+    profile: str,
+    start: dt.date,
+    end: dt.date,
+    student: str | None = None,
+    student_id: int | None = None,
+) -> HomeworkList:
+    """Map a `/api/homeworks/lessons` payload onto the domain model.
+
+    The payload is four parallel lists that have to be joined: `homeworks` holds the text
+    and the dates, `lessons` names the subject behind a `lessonId`, `teachers` names the
+    teacher behind a `teacherId`, and `records` is the only place that connects a homework
+    to both its teacher and the pupils it was set for.
+
+    `student_id` is that last join: on an account with several children the endpoint takes
+    no student parameter at all, so a homework whose record names *other* pupils is dropped
+    here rather than attributed to the wrong child.
+    """
+    data = payload.get("data") if isinstance(payload, dict) else None
+    data = data if isinstance(data, dict) else {}
+
+    subjects = _lookup(data.get("lessons"), "subject")
+    teacher_names = _lookup(data.get("teachers"), "name")
+    teachers, foreign = _records(data.get("records"), teacher_names, student_id)
+
+    items = []
+    for raw in data.get("homeworks") or []:
+        item = _map_homework(raw, subjects, teachers, foreign)
+        if item:
+            items.append(item)
+    items.sort(key=lambda item: (item.due_date, item.subject or "", item.text))
+
+    return HomeworkList(
+        profile=profile,
+        student=student,
+        start=start,
+        end=end,
+        homework=items,
+        open_count=sum(1 for item in items if not item.completed),
+    )
+
+
+def _map_homework(
+    raw: Any,
+    subjects: dict[Any, str],
+    teachers: dict[Any, str],
+    foreign: set[Any],
+) -> Homework | None:
+    if not isinstance(raw, dict):
+        return None
+
+    identifier = raw.get("id")
+    if identifier in foreign:
+        logger.debug("skipping homework %r: it was set for another child", identifier)
+        return None
+
+    assigned = _parse_date(raw.get("date"))
+    due = _parse_date(raw.get("dueDate")) or assigned
+    text = _clean_text(raw.get("text"))
+    remark = _clean_text(raw.get("remark"))
+    if due is None or not (text or remark):
+        logger.debug("skipping an unreadable homework entry: %r", identifier)
+        return None
+
+    return Homework(
+        due_date=due,
+        assigned_date=assigned,
+        subject=_first_text(subjects.get(raw.get("lessonId"))),
+        teacher=teachers.get(identifier),
+        text=text or remark or "",
+        remark=remark if text else None,
+        completed=bool(raw.get("completed")),
+        has_attachments=bool(raw.get("attachments")),
+    )
+
+
+def _lookup(entries: Any, field: str) -> dict[Any, str]:
+    """Turn one of the payload's `[{id, <field>}, ...]` lists into a lookup table."""
+    table: dict[Any, str] = {}
+    for entry in entries or []:
+        if isinstance(entry, dict) and entry.get("id") is not None:
+            value = _first_text(entry.get(field))
+            if value:
+                table[entry["id"]] = value
+    return table
+
+
+def _records(
+    records: Any, teacher_names: dict[Any, str], student_id: int | None
+) -> tuple[dict[Any, str], set[Any]]:
+    """The teacher of each homework, and the ids belonging to a different child."""
+    teachers: dict[Any, str] = {}
+    foreign: set[Any] = set()
+    for record in records or []:
+        if not isinstance(record, dict):
+            continue
+        identifier = record.get("homeworkId")
+        if identifier is None:
+            continue
+        name = teacher_names.get(record.get("teacherId"))
+        if name:
+            teachers[identifier] = name
+        elements = record.get("elementIds")
+        names_pupils = isinstance(elements, list) and bool(elements)
+        if student_id is not None and names_pupils and student_id not in elements:
+            foreign.add(identifier)
+    return teachers, foreign
+
+
+def _clean_text(value: Any) -> str | None:
+    """Tidy a teacher's free text without touching its wording.
+
+    Unlike the school's announcements this is typed into a plain text box, so it is *not*
+    run through the HTML stripper: "Nr. 4: 5 < x < 9" must survive intact. Only entities
+    are decoded and blank lines dropped, because the texts routinely end in a newline.
+    """
+    lines = [line.strip() for line in html.unescape(str(value or "")).splitlines()]
+    cleaned = "\n".join(line for line in lines if line)
+    return cleaned or None
 
 
 # ------------------------------------------------------------------------------- messages

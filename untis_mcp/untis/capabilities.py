@@ -53,6 +53,10 @@ TOOL_REQUIREMENTS: dict[str, Requirement] = {
         permissions=frozenset({"STUDABS_REPORT"}),
         views=frozenset({"STUDENTABSENCES"}),
     ),
+    "get_homework": Requirement(
+        permissions=frozenset({"HOMEWORK"}),
+        views=frozenset({"STUDENT_HOMEWORK"}),
+    ),
     "get_messages": Requirement(
         permissions=frozenset({"MESSAGES"}),
         views=frozenset({"MESSAGE_CENTER", "MESSAGE_CENTER_2021"}),

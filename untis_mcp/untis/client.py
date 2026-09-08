@@ -36,6 +36,7 @@ DEFAULT_TIMEOUT = 30.0
 TIMETABLE_ENTRIES = "/WebUntis/api/rest/view/v1/timetable/entries"
 ABSENCES = "/WebUntis/api/classreg/absences/students"
 CALENDAR_ENTRIES = "/WebUntis/api/rest/view/v2/calendar-entry/detail"
+HOMEWORK = "/WebUntis/api/homeworks/lessons"
 MESSAGES = "/WebUntis/api/rest/view/v1/messages"
 NEWS_WIDGET = "/WebUntis/api/public/news/newsWidgetData"
 
@@ -188,6 +189,21 @@ class UntisClient:
                 "endDateTime": f"{end.isoformat()}T23:59",
             },
             needs_token=True,
+        )
+
+    async def homework(self, start: date, end: date) -> Any:
+        """Homework set for this profile's child, by *due* date.
+
+        Cookie-only, compact `yyyyMMdd` dates, and no element parameter at all: the endpoint
+        answers for whatever the logged-in account may see, which is why the payload's
+        `records` carry the pupil ids the mapping filters on. The range is matched against
+        `dueDate` alone — an assignment given on Thursday for the following Monday is
+        outside a range that ends on Friday.
+        """
+        await self.session()
+        return await self.get(
+            HOMEWORK,
+            {"startDate": start.strftime("%Y%m%d"), "endDate": end.strftime("%Y%m%d")},
         )
 
     async def messages(self) -> Any:

@@ -75,6 +75,7 @@ ISO-8601 (`YYYY-MM-DD`) strings on the wire.
 | 5 | `get_messages` | "Mitteilungen" | `profile`, optional `unread_only`, optional `limit` | Messages / messages-of-the-day addressed to the account. |
 | 6 | `get_messages_of_day` | "Tagesmeldungen" | `profile`, optional `date` | The school's messages of the day for one date. Separate from tool 5 on purpose — see below. |
 | 7 | `list_profiles` | — | none | Configured profile names, descriptions and supported tools (no secrets). |
+| 8 | `get_homework` | "Hausaufgaben" | `profile`, optional `start`, `end`, optional `only_open` | Homework from the class register, matched on its **due** date. Defaults to a week back and four weeks ahead. |
 
 Tools 5 and 6 stay separate rather than one tool with a fallback. One tenant forbids the
 message inbox entirely (section 5.4), and messages of the day work on both — so a single
@@ -82,6 +83,12 @@ message inbox entirely (section 5.4), and messages of the day work on both — s
 assistant state things about one school that are only true of the other. `get_messages`
 therefore says plainly that it is unavailable for that profile, and the day's announcements
 are their own tool with their own name.
+
+Tool 8 was added after the first release: the timetable feed only flags a lesson that *has*
+homework (an `icons: ["HOMEWORK"]` on the grid entry) and never carries the text, so a parent
+asking "what does she have to do?" got nothing until the class register's own endpoint was
+found (section 5.2). Its range filters on the due date alone, which is the question a parent
+asks; the day it was set is reported as `assigned_date`.
 
 Common behaviour for all tools:
 
@@ -408,6 +415,7 @@ profile rather than crash the server (FR-06, FR-07).
 | 3, 4 | `GET /WebUntis/api/public/timetable/weekly/data?elementType=5&elementId={studentId}&date={ISO Monday}&formatId=1` | cookie | verified — also the only place the class id appears |
 | 3, 4 | JSON-RPC `getTimetable` `{id: studentId, type: 5, startDate, endDate}` | cookie | verified — **but the range must lie inside one school year**, else `-8507` |
 | 2 | `GET /WebUntis/api/classreg/absences/students?startDate&endDate&studentId&excuseStatusId=-1` | cookie | **verified** — returns reason, excuse status and the excuse record |
+| 8 | `GET /WebUntis/api/homeworks/lessons?startDate={yyyyMMdd}&endDate={yyyyMMdd}` | cookie | **verified with content on both** — the range matches `dueDate` only, and the payload takes no element parameter at all |
 | 5 | `GET /WebUntis/api/rest/view/v1/messages` | JWT + `tenant-id` | **partly verified** — works on A, HTTP 403 on B (no `MESSAGES` permission). A's inbox has always been empty, so the envelope is known but an individual message has never been seen |
 | 6 | `GET /WebUntis/api/public/news/newsWidgetData?date={yyyyMMdd}` | cookie | **verified with content** — tenant B publishes announcements; their `text` is HTML, and a notice repeats on every day it is valid for |
 | 1 | `GET /WebUntis/api/rest/view/v2/calendar-entry/detail?elementId={studentId}&elementType=5&startDateTime={ISO+time}&endDateTime={ISO+time}` | JWT + `tenant-id` | reachable on both — but `{"calendarEntries": []}` for the **entire school year** |
@@ -434,13 +442,24 @@ correctly parameterised — stays empty across the entire school year for both c
 endpoint as a secondary source that may fill later in the year. Exams cannot contribute at
 all: `/api/exams` is refused for both parent accounts.
 
+**Homework is the one payload that has to be joined.** `/api/homeworks/lessons` answers with
+four *parallel* lists — `homeworks` (text, `date`, `dueDate`, `completed`, `attachments`),
+`lessons` (`lessonId` → subject abbreviation), `teachers` (`teacherId` → name) and `records`,
+the only place that ties a homework to both its teacher and the pupils it was set for. An entry
+is therefore a join of four ids, and because the request carries no student parameter at all,
+`records[].elementIds` is the only thing that keeps one child's homework out of another's
+answer on an account with several children. Subjects come back abbreviated (`ma`), so the tool
+spends one extra timetable request on turning them into `Mathematik` — and returns the homework
+with its short names if that request fails. The newer `rest/view/v1/...` spellings of the
+endpoint all answer 404 on both tenants.
+
 ### 5.3 Wire formats
 
 Four date encodings coexist, and which one applies is a property of the endpoint:
 
 | Format | Where |
 |--------|-------|
-| `yyyyMMdd`, as a **number or a string** | JSON-RPC, `/api/classreg/*`, `/api/exams`, `newsWidgetData` |
+| `yyyyMMdd`, as a **number or a string** | JSON-RPC, `/api/classreg/*`, `/api/exams`, `/api/homeworks/lessons`, `newsWidgetData` |
 | `yyyy-MM-dd` | `weekly/data` `date`, `timetable/entries` `start` and `end` |
 | `yyyy-MM-ddTHH:mm` | `calendar-entry/detail` `startDateTime` / `endDateTime`, and every `duration` in `timetable/entries` |
 | epoch milliseconds | `createDate`, `lastUpdate`, `lastImportTimestamp` |
@@ -467,6 +486,7 @@ question 3, answered concretely:
 | `STUDENTABSENCES` | yes | yes | tool 2 works on both |
 | `TT_VIEW:R:5:ASSIGNED` | yes | yes | tools 3 and 4 work on both |
 | `CLASSEVENT:R:0:ASSIGNED` | yes | no | school events; both tenants nevertheless deliver `EVENT` entries in the timetable feed |
+| `HOMEWORK:R:0:ALL`, view `STUDENT_HOMEWORK` | yes | yes | tool 8 works on both, and both schools' teachers actually fill it in |
 | `OFFICEHOURS:R:0:ALL`, `STUDENT_CONTACT_HOURS` | yes | yes | office hours and parent-teacher slots — an unexplored second source for tool 1 |
 | `PERFORMANCEASSESSMENT`, `STUDENT_GRADES` | no | yes | grades; out of scope (section 1.2) |
 

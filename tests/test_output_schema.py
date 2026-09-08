@@ -99,6 +99,20 @@ def sample_results() -> dict[str, Any]:
                 )
             ],
         ),
+        "HomeworkList": models.HomeworkList(
+            profile="anna",
+            start=lesson.date,
+            end=lesson.date,
+            homework=[
+                models.Homework(
+                    due_date=lesson.date,
+                    assigned_date=lesson.date,
+                    subject="ma",
+                    text="Seite 17, Nr. 6",
+                )
+            ],
+            open_count=1,
+        ),
         "Messages": models.Messages(
             profile="anna",
             messages=[models.Message(subject="Elternabend", sent=dt.datetime(2026, 9, 7, 8, 5))],

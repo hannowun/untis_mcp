@@ -231,6 +231,50 @@ class Appointments(BaseModel):
     appointments: list[Appointment] = Field(default_factory=list)
 
 
+class Homework(BaseModel):
+    """One homework assignment, as a teacher entered it in the class register."""
+
+    due_date: dt.date = Field(
+        description="When it has to be done. This is the date the school filters on."
+    )
+    assigned_date: dt.date | None = Field(
+        default=None, description="The day of the lesson it was set in."
+    )
+    subject: str | None = Field(default=None, description="Short subject name, e.g. 'ma'.")
+    subject_long: str | None = Field(
+        default=None,
+        description="Full subject name, e.g. 'Mathematik'. Null when the timetable of those "
+        "days does not name the subject; use `subject` then.",
+    )
+    teacher: str | None = Field(default=None, description="Who set it, as the school names them.")
+    text: str = Field(description="What has to be done, in the teacher's own words.")
+    remark: str | None = Field(default=None, description="Extra note the teacher attached.")
+    completed: bool = Field(
+        default=False,
+        description="Whether it has been ticked off in WebUntis. Most families never tick "
+        "anything off, so `false` means 'not marked done', not 'not done'.",
+    )
+    has_attachments: bool = Field(
+        default=False,
+        description="Whether files hang on it. They can only be opened in WebUntis itself.",
+    )
+
+
+class HomeworkList(BaseModel):
+    """The answer of `get_homework`."""
+
+    profile: str = Field(description="The profile this homework belongs to.")
+    student: str | None = Field(default=None, description="The child, as the school names them.")
+    start: dt.date = Field(description="First due date included in this answer.")
+    end: dt.date = Field(description="Last due date included in this answer.")
+    homework: list[Homework] = Field(default_factory=list)
+    open_count: int = Field(
+        default=0,
+        description="How many of the returned assignments are not ticked off — count them "
+        "from here rather than by re-reading the list.",
+    )
+
+
 class Message(BaseModel):
     """One message from the WebUntis inbox, addressed to the parent account."""
 

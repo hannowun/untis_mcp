@@ -24,6 +24,7 @@ from untis_mcp.errors import ProfileNotFound, UntisMcpError
 from untis_mcp.models import (
     Absences,
     Appointments,
+    HomeworkList,
     Messages,
     MessagesOfDay,
     ProfileSummary,
@@ -35,6 +36,7 @@ from untis_mcp.untis.mapping import (
     appointments_from_timetable,
     merge_appointments,
     parse_absences,
+    parse_homework,
     parse_messages,
     parse_messages_of_day,
     parse_timetable,
@@ -118,6 +120,40 @@ async def fetch_timetable(
     return timetable
 
 
+async def name_subjects(client: UntisClient, homework: HomeworkList) -> None:
+    """Fill in `subject_long` from the timetable of the days the homework was set on.
+
+    The homework endpoint names subjects only by their abbreviation ("ma"), which is not
+    what a parent calls the subject. The timetable feed knows both names, so one extra
+    request over the same span turns "ma" into "Mathematik".
+
+    Strictly an improvement: if the timetable is unavailable the homework is returned with
+    the short names it already has, exactly as `get_appointments` treats its second source.
+    """
+    subjects = {item.subject for item in homework.homework if item.subject}
+    if not subjects:
+        return
+
+    dates = [item.assigned_date or item.due_date for item in homework.homework]
+    try:
+        payload = await client.timetable_entries(min(dates), max(dates))
+    except UntisMcpError as exc:
+        logger.info("profile %r: no timetable to name subjects with (%s)", client.profile.name, exc)
+        return
+
+    timetable = parse_timetable(
+        payload, profile=client.profile.name, start=min(dates), end=max(dates)
+    )
+    long_names = {
+        lesson.subject: lesson.subject_long
+        for day in timetable.days
+        for lesson in day.lessons
+        if lesson.subject and lesson.subject_long
+    }
+    for item in homework.homework:
+        item.subject_long = long_names.get(item.subject or "")
+
+
 async def default_absence_range(client: UntisClient) -> tuple[dt.date, dt.date]:
     """ "Since the school year began, up to today" — the range a parent actually means.
 
@@ -133,6 +169,11 @@ async def default_absence_range(client: UntisClient) -> tuple[dt.date, dt.date]:
 
 # How far ahead "my appointments" looks when nobody says otherwise.
 UPCOMING_DAYS = 28
+
+# The default homework window: everything still due in the next four weeks, plus the past
+# week, so an assignment that was due yesterday and never ticked off is still in the answer.
+HOMEWORK_DAYS_BACK = 7
+HOMEWORK_DAYS_AHEAD = 28
 
 
 def register_tools(mcp: FastMCP, config: Config, registry: ClientRegistry) -> None:
@@ -266,6 +307,62 @@ def register_tools(mcp: FastMCP, config: Config, registry: ClientRegistry) -> No
             len(from_calendar),
         )
         return appointments
+
+    @mcp.tool
+    async def get_homework(
+        profile: str,
+        start: str | None = None,
+        end: str | None = None,
+        only_open: bool = False,
+    ) -> HomeworkList:
+        """Homework set for one child — the "Hausaufgaben" of the class register.
+
+        `start` and `end` are ISO-8601 dates and are matched against the **due date**, not
+        against the day the homework was set: by default the window runs from a week ago to
+        four weeks ahead, so "what does she still have to do?" is answered by the default.
+        Ask for a single day with `start = end` to get what is due on that day.
+
+        Each entry carries `text` as the teacher wrote it, the subject, who set it, and both
+        dates. `completed` means somebody ticked it off in WebUntis; families that never use
+        that tick leave everything `false`, so treat it as a weak signal and use `only_open`
+        only when the child does tick things off. Attachments cannot be downloaded here.
+
+        An empty list means nothing is due in the window, not that the lookup failed.
+        """
+        client = await client_for(config, registry, profile, "get_homework")
+        session = await client.session()
+
+        today = dt.date.today()
+        first = parse_date(start, "start", today - dt.timedelta(days=HOMEWORK_DAYS_BACK))
+        last = parse_date(end, "end", today + dt.timedelta(days=HOMEWORK_DAYS_AHEAD))
+        if last < first:
+            raise ToolError(f"end={last.isoformat()} lies before start={first.isoformat()}.")
+
+        try:
+            payload = await client.homework(first, last)
+        except UntisMcpError as exc:
+            raise ToolError(str(exc)) from exc
+
+        homework = parse_homework(
+            payload,
+            profile=client.profile.name,
+            start=first,
+            end=last,
+            student=session.student_name or None,
+            student_id=session.student_id,
+        )
+        await name_subjects(client, homework)
+        if only_open:
+            homework.homework = [item for item in homework.homework if not item.completed]
+        logger.info(
+            "get_homework(%s, %s..%s) -> %d entries, %d open",
+            client.profile.name,
+            first,
+            last,
+            len(homework.homework),
+            homework.open_count,
+        )
+        return homework
 
     @mcp.tool
     async def get_messages(profile: str, unread_only: bool = False, limit: int = 20) -> Messages:

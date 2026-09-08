@@ -1,0 +1,109 @@
+{
+  "data": {
+    "records": [
+      {
+        "homeworkId": 2260,
+        "teacherId": 389,
+        "elementIds": [
+          1001
+        ]
+      },
+      {
+        "homeworkId": 2283,
+        "teacherId": 389,
+        "elementIds": [
+          1001
+        ]
+      },
+      {
+        "homeworkId": 2294,
+        "teacherId": 512,
+        "elementIds": [
+          1001
+        ]
+      },
+      {
+        "homeworkId": 2356,
+        "teacherId": 389,
+        "elementIds": [
+          1001
+        ]
+      }
+    ],
+    "homeworks": [
+      {
+        "id": 2283,
+        "lessonId": 28434,
+        "date": 20260903,
+        "dueDate": 20260908,
+        "text": "Seite 17, Nr. 6 (mit kurzer Recherche)",
+        "remark": "",
+        "completed": false,
+        "attachments": []
+      },
+      {
+        "id": 2294,
+        "lessonId": 28257,
+        "date": 20260903,
+        "dueDate": 20260904,
+        "text": "Zeitstrahl fertigstellen",
+        "remark": "bitte ins Heft kleben",
+        "completed": false,
+        "attachments": [
+          {
+            "id": 771,
+            "name": "zeitstrahl.pdf"
+          }
+        ]
+      },
+      {
+        "id": 2356,
+        "lessonId": 29438,
+        "date": 20260908,
+        "dueDate": 20260915,
+        "text": "Zwei Blätter zu Größen fertig bearbeiten\n",
+        "remark": "",
+        "completed": false,
+        "attachments": []
+      },
+      {
+        "id": 2260,
+        "lessonId": 28434,
+        "date": 20260901,
+        "dueDate": 20260903,
+        "text": "Hefter- und Bucheinteilung: siehe HA-Heft,\nKopfhörer mit Kabel mitbringen (wenn möglich)\n",
+        "remark": "",
+        "completed": true,
+        "attachments": []
+      }
+    ],
+    "teachers": [
+      {
+        "id": 389,
+        "name": "Mus"
+      }
+    ],
+    "lessons": [
+      {
+        "id": 28434,
+        "subject": "ma",
+        "lessonType": "Unterricht"
+      },
+      {
+        "id": 28257,
+        "subject": "gw",
+        "lessonType": "Unterricht"
+      },
+      {
+        "id": 27823,
+        "subject": "de",
+        "lessonType": "Unterricht"
+      },
+      {
+        "id": 29438,
+        "subject": "",
+        "lessonType": "Unterricht"
+      }
+    ]
+  }
+}
