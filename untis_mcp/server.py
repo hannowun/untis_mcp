@@ -10,6 +10,8 @@ from fastmcp import FastMCP
 
 from untis_mcp import __version__
 from untis_mcp.config import Config
+from untis_mcp.http_auth import TokenAuth
+from untis_mcp.rest import check_routes, register_rest_api
 from untis_mcp.tools import register_tools
 from untis_mcp.untis.client import ClientRegistry
 
@@ -37,24 +39,32 @@ def create_server(
     config: Config,
     auth_token: str | None = None,
     registry: ClientRegistry | None = None,
+    rest_api: bool = True,
 ) -> FastMCP:
     """Build the server for a loaded configuration.
 
-    `auth_token`, when set, requires clients to present it as a bearer token. That is the
-    optional guard of ADR-006 for the HTTP transport; it is irrelevant over stdio.
+    `auth_token`, when set, requires clients to present it — as a bearer header, or as the
+    first segment of the URL for clients that cannot send headers. That is the optional guard
+    of ADR-006 for the HTTP transport; it is irrelevant over stdio.
+    `rest_api` adds the plain HTTP interface of ADR-012 beside the MCP endpoint — the same
+    tools, the same token, for clients that do not speak MCP.
     `registry` exists so tests can supply clients pointed at a fake tenant.
     """
     auth = None
     if auth_token:
-        from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
-
-        auth = StaticTokenVerifier(tokens={auth_token: {"client_id": "untis-mcp"}})
-        logger.info("bearer token authentication enabled")
+        auth = TokenAuth(auth_token)
+        logger.info("token authentication enabled (bearer header or URL prefix)")
 
     registry = registry or ClientRegistry(config)
 
     @asynccontextmanager
     async def lifespan(server: FastMCP) -> AsyncIterator[None]:
+        if rest_api:
+            # A tool without a REST route would simply be missing from the HTTP interface,
+            # which nothing else would ever notice. Here the tool list can be read, so this
+            # is the first moment the two halves can be compared — and refusing to start is
+            # the right answer, because only a programming mistake can cause it.
+            check_routes([tool.name for tool in await server.list_tools()])
         try:
             yield
         finally:
@@ -69,6 +79,8 @@ def create_server(
         lifespan=lifespan,
     )
     register_tools(mcp, config, registry)
+    if rest_api:
+        register_rest_api(mcp, auth_token=auth_token)
     logger.info(
         "server ready with %d profile(s): %s", len(config.profiles), ", ".join(config.names)
     )

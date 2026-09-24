@@ -1,7 +1,8 @@
 """Entry point: logging, configuration, transport selection (ADR-006).
 
 Transports differ by deployment: stdio for local development, streamable HTTP in the
-container, where the MCP client lives on another machine (section 7.1).
+container, where the MCP client lives on another machine (section 7.1). Under HTTP the
+plain REST interface of ADR-012 is served beside the MCP endpoint unless it is switched off.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ TRANSPORT_ENV = "UNTIS_MCP_TRANSPORT"
 HOST_ENV = "UNTIS_MCP_HOST"
 PORT_ENV = "UNTIS_MCP_PORT"
 TOKEN_ENV = "UNTIS_MCP_AUTH_TOKEN"
+REST_ENV = "UNTIS_MCP_REST"
 LOG_LEVEL_ENV = "UNTIS_MCP_LOG_LEVEL"
 
 logger = logging.getLogger("untis_mcp")
@@ -32,6 +34,13 @@ def configure_logging() -> None:
     )
 
 
+def enabled(value: str | None, default: bool = True) -> bool:
+    """Read an on/off environment variable, tolerating the spellings people actually use."""
+    if value is None or not value.strip():
+        return default
+    return value.strip().lower() not in {"0", "false", "no", "off"}
+
+
 def main() -> int:
     configure_logging()
 
@@ -42,7 +51,8 @@ def main() -> int:
         print(f"untis-mcp: {exc}", file=sys.stderr)
         return 2
 
-    server = create_server(config, auth_token=os.environ.get(TOKEN_ENV))
+    rest_api = enabled(os.environ.get(REST_ENV))
+    server = create_server(config, auth_token=os.environ.get(TOKEN_ENV), rest_api=rest_api)
 
     transport = os.environ.get(TRANSPORT_ENV, "stdio").strip().lower()
     if transport == "stdio":
@@ -51,6 +61,8 @@ def main() -> int:
         host = os.environ.get(HOST_ENV, "127.0.0.1")
         port = int(os.environ.get(PORT_ENV, "8000"))
         logger.info("serving MCP over HTTP on %s:%d", host, port)
+        if rest_api:
+            logger.info("REST interface on http://%s:%d/api", host, port)
         server.run(transport="http", host=host, port=port, show_banner=False)
     else:
         print(

@@ -266,7 +266,20 @@ once, replay the request once, then fail with a profile-tagged error" (FR-06).
 LAN; stdio cannot cross that boundary. Since the server holds credentials for both schools
 and performs no authorization of its own, exposure must be constrained by deployment: bind
 to the LAN/VPN interface only, do not port-forward from the internet, and optionally
-require a static bearer token via `UNTIS_MCP_AUTH_TOKEN`.
+require a static token via `UNTIS_MCP_AUTH_TOKEN`.
+
+**Amendment (2026-09-21) — the token in the URL:** the Claude web and mobile apps connect to
+a custom MCP server from Anthropic's cloud and can be given a URL and nothing else: no header,
+no fixed token, only OAuth, which this server does not offer. The same token is therefore
+also accepted as the first path segment — `/<token>/mcp`, `/<token>/api/...` — beside the
+bearer header, not instead of it. It is implemented as one ASGI middleware ahead of FastMCP's
+own authentication (`untis_mcp/http_auth.py`): a matching first segment is stripped from the
+path and turned into the `Authorization: Bearer` header, after which every downstream check
+— FastMCP's around the MCP endpoint, the REST layer's own (ADR-012) — sees one token in one
+shape. A non-matching segment is left alone and meets an ordinary 404. The rewrite mutates
+the request scope in place so that uvicorn's access log records the stripped path, never the
+token. The URL shape is the weaker of the two — the link *is* the secret and may end up in
+proxy logs or a chat — which is why the deployment notes insist on a long random token.
 
 ### ADR-007: Read-only scope
 
@@ -359,6 +372,41 @@ teaching us nothing: a 403 is an answer, not an outage.
 **Consequence:** Two independent paths must be tested: a stale-by-TTL session, and a session
 the server rejects mid-flight. Both are covered against a fake WebUntis rather than a real
 tenant.
+
+### ADR-012: A plain REST interface beside the MCP endpoint, dispatching to the same tools
+
+**Decision:** Under the HTTP transport the server also serves a read-only JSON API under
+`/api`, on the same port, guarded by the same bearer token. Every route dispatches to one
+registered MCP tool through `FastMCP.call_tool`; the response body is the tool's own result.
+The route table (`untis_mcp/rest.py`) is compared against the registered tools at startup, so
+a tool without a route stops the server rather than quietly missing from the API. Switched
+off with `UNTIS_MCP_REST=off`.
+
+**Rationale:** Not every client that wants tomorrow's timetable speaks MCP — a shell script,
+a dashboard tile, a home-automation rule want to fetch a URL and read JSON. The alternative
+of a second service duplicates configuration, credentials and deployment; the alternative of
+a hand-written second implementation of each call duplicates the argument defaulting and the
+domain models, which is precisely where the two would drift apart. Dispatching to the tools
+keeps one implementation and makes parity testable in one assertion: the HTTP body equals
+what the MCP client got.
+
+The shape is REST-like rather than RPC-like — `GET` only, since the server never writes
+(ADR-007), and the profile is a path segment (`/api/profiles/anna/homework`) because scoping
+every answer to one child is the property this server exists to protect (FR-04). The
+remaining tool arguments are query parameters, coerced to the types the tool's own input
+schema declares; an unknown parameter is refused rather than ignored, because a typo in
+`only_open` would otherwise be answered with the unfiltered list, which looks like the truth.
+
+`GET /api` describes the endpoints, their parameters and the tools' own descriptions, so the
+interface can be discovered with `curl` alone.
+
+**Consequence:** FastMCP wraps its bearer authentication around the MCP endpoint only, so the
+REST layer enforces the token itself — verified by a test, since a second interface that
+silently skips the guard of ADR-006 would be worse than no second interface. Errors, which
+reach the layer as `ToolError`, are classified by the exception the tool layer wrapped rather
+than by their text: an unknown profile is 404, a feature the school forbids is 501 (permanent
+by ADR-010, and unlike 403 not confusable with the caller's own token), an unreachable tenant
+is 503, and a bad argument is 400. Each body carries a stable `kind` beside the message.
 
 ---
 
@@ -500,9 +548,16 @@ per-profile capabilities** instead of assuming a uniform WebUntis (ADR-010).
 ### 6.1 Layers
 
 ```
-              MCP client (AI assistant)
-                        |  MCP over streamable HTTP (stdio in dev)
-   +--------------------v-------------------------------+
+            MCP client (AI assistant)   plain HTTP client (script, dashboard)
+                        |               |
+   MCP over streamable  |               |  GET /api/... (ADR-012)
+   HTTP (stdio in dev)  |               |
+                        | +-------------v----------------+
+                        | |  REST layer                  |  routes, query parameters,
+                        | |  (untis_mcp/rest.py)         |  HTTP status codes
+                        | +-------------+----------------+
+                        |               |                   every route is one tool call
+   +--------------------v---------------v----------------+
    |  Tool layer         (untis_mcp/tools.py)            |  FastMCP tool definitions,
    |                                                     |  argument validation, date
    |                                                     |  defaulting, profile lookup
@@ -521,6 +576,9 @@ per-profile capabilities** instead of assuming a uniform WebUntis (ADR-010).
             WebUntis tenant A     WebUntis tenant B
 ```
 
+The REST layer is deliberately the thinnest of them: it owns URLs, query-string parsing
+and status codes, and nothing else — every call it serves is a call into the tool layer.
+
 The key structural property: **the tool layer knows nothing about WebUntis**. It resolves a
 profile name to a client and asks that client for domain objects. Which HTTP or JSON-RPC
 call produces those objects lives entirely in the client layer, so a WebUntis-side change
@@ -536,6 +594,7 @@ untis_mcp/
   config.py              # Config / ProfileConfig models, TOML loading, validation
   models.py              # domain models returned by the tools
   tools.py               # the six tools
+  rest.py                # plain HTTP interface onto the same tools (ADR-012)
   errors.py              # ProfileNotFound, UntisAuthError, UntisUnavailable, ...
   untis/
     __init__.py
@@ -654,8 +713,9 @@ self-contained script rather than a step inside the PowerShell build.
   excluded from version control (`.gitignore`), mounted read-only, and permission-restricted
   on the host.
 - The server performs no authorization: any client that can reach the HTTP port can read
-  both children's data. Mitigations: bind to a private interface, never port-forward, and
-  optionally require a bearer token (ADR-006). Which interface that is, is a deployment
+  both children's data, through either interface — the REST routes of ADR-012 are as
+  unauthorized as the MCP endpoint, and enforce the same optional token. Mitigations: bind to
+  a private interface, never port-forward, and optionally require a bearer token (ADR-006). Which interface that is, is a deployment
   decision and therefore lives in `.env`, not in code — the same file also holds the token
   and any `password_env` secrets, so it is git-ignored, excluded from the build context and
   permission-restricted by `deploy.sh` alongside the profile configuration.
@@ -686,6 +746,10 @@ self-contained script rather than a step inside the PowerShell build.
   exception, since the endpoints can change without notice.
 - Tool-level tests against a fake `UntisClient`, verifying date defaulting, week resolution
   and profile tagging.
+- REST tests (ADR-012) drive the real Starlette application through an in-process ASGI
+  transport: the parity assertion that the HTTP body equals the MCP result, the status code
+  for each class of failure, the bearer token on both interfaces, and the route table against
+  the registered tools.
 - No test hits a real school tenant in CI.
 
 ---

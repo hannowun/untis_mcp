@@ -6,7 +6,8 @@ available to an AI assistant.
 Both of my children attend different schools, and each school runs its own WebUntis tenant
 with its own credentials. This server logs into all of them and exposes their data through
 a handful of read-only MCP tools, so I can ask one assistant about timetables, absences and
-school messages instead of logging into two portals.
+school messages instead of logging into two portals. The same calls are available as a plain
+HTTP/JSON API for everything that does not speak MCP.
 
 > **Status:** early development. The requirements, design and architecture are written down
 > in [`documents/requirements-and-design.md`](documents/requirements-and-design.md).
@@ -31,7 +32,8 @@ addresses, so one server instance serves all children.
 | `get_messages` | Messages sent to the account through the WebUntis message centre. |
 | `get_messages_of_day` | The school's announcements for a day. |
 
-All tools are **read-only** — the server never changes anything in WebUntis.
+All tools are **read-only** — the server never changes anything in WebUntis. Every one of
+them is also reachable over plain HTTP; see [REST interface](#rest-interface).
 
 ---
 
@@ -69,8 +71,64 @@ file permissions, and mount it read-only into the container.
 | `UNTIS_MCP_TRANSPORT` | `http` in the container, `stdio` locally | MCP transport. |
 | `UNTIS_MCP_HOST` | `127.0.0.1` | Bind address for the HTTP transport. |
 | `UNTIS_MCP_PORT` | `8000` | Port for the HTTP transport. |
-| `UNTIS_MCP_AUTH_TOKEN` | unset | Optional static bearer token required from clients. |
+| `UNTIS_MCP_AUTH_TOKEN` | unset | Optional static token required from clients, on both interfaces — as a bearer header or as the first URL segment. |
+| `UNTIS_MCP_REST` | `on` | Serve the REST interface under `/api` beside the MCP endpoint. |
 | `UNTIS_MCP_LOG_LEVEL` | `INFO` | Log verbosity (logs go to stderr). |
+
+---
+
+## REST interface
+
+Under the HTTP transport the server also answers plain `GET` requests under `/api` — the
+same calls as the tools, the same results, the same optional bearer token, on the same port.
+It exists for the clients that do not speak MCP: a shell script, a dashboard tile, a
+home-automation rule. Set `UNTIS_MCP_REST=off` to serve MCP alone.
+
+```bash
+curl -s "http://localhost:8000/api/profiles/anna/timetable/day?date=2026-09-07"
+```
+
+| Endpoint | Tool | Query parameters |
+|----------|------|------------------|
+| `GET /api` | — | (an index of everything below, with the tools' own descriptions) |
+| `GET /api/profiles` | `list_profiles` | — |
+| `GET /api/profiles/{profile}/timetable/day` | `get_timetable_day` | `date` |
+| `GET /api/profiles/{profile}/timetable/week` | `get_timetable_week` | `week_of`, `year`, `week` |
+| `GET /api/profiles/{profile}/absences` | `get_absences` | `start`, `end`, `only_unexcused` |
+| `GET /api/profiles/{profile}/appointments` | `get_appointments` | `start`, `end` |
+| `GET /api/profiles/{profile}/homework` | `get_homework` | `start`, `end`, `only_open` |
+| `GET /api/profiles/{profile}/messages` | `get_messages` | `unread_only`, `limit` |
+| `GET /api/profiles/{profile}/messages-of-day` | `get_messages_of_day` | `date` |
+
+Dates are ISO-8601 (`2026-09-07`), booleans are `true`/`false`, and every parameter is
+optional with the default documented in `GET /api`. An empty value (`?date=`) means the
+default, so a shell script need not special-case an unset variable. A misspelled parameter
+is refused rather than silently ignored.
+
+With a token set, both interfaces require it:
+
+```bash
+curl -s -H "Authorization: Bearer $UNTIS_MCP_AUTH_TOKEN" "http://localhost:8000/api/profiles/anna/homework?only_open=true"
+```
+
+A client that cannot send headers may put the same token in front of the path instead —
+`/<token>/api/...` and `/<token>/mcp` reach the very same routes:
+
+```bash
+curl -s "http://localhost:8000/$UNTIS_MCP_AUTH_TOKEN/api/profiles/anna/homework?only_open=true"
+```
+
+Failures come back as `{"error": "...", "kind": "..."}` with a status that says what to do
+about them:
+
+| Status | `kind` | Meaning |
+|--------|--------|---------|
+| 400 | `bad_request` | A bad argument — an unparseable date, an unknown parameter. |
+| 401 | `unauthorized` | The token is missing or wrong (a wrong token *in the URL* is a 404: no prefix is stripped, so the path simply does not exist). |
+| 404 | `unknown_profile` | No such profile; the message lists the configured ones. |
+| 501 | `feature_not_available` | This school's account is not permitted to use this call. Permanent — do not retry. |
+| 502 | `upstream_auth_failed` | The login at the school failed. |
+| 503 | `upstream_unavailable` | The school's server could not be reached. |
 
 ---
 
@@ -100,13 +158,11 @@ Run the server over stdio (what an MCP client on the same machine launches):
 uv run untis-mcp
 ```
 
-Or over HTTP:
+Or over HTTP, which also serves the REST interface on `http://127.0.0.1:8000/api`:
 
 ```bash
 UNTIS_MCP_TRANSPORT=http UNTIS_MCP_PORT=8000 uv run untis-mcp
 ```
-
-All read-only tools are implemented; the container setup is what remains.
 
 ### Protocol spike
 
@@ -154,7 +210,8 @@ cp .env.example .env && chmod 600 .env
 | `UNTIS_MCP_RUN_AS` | `1000:1000` | uid:gid the server runs as. Must be able to read `config/profiles.toml`, which a bind mount hands over with its host ownership intact — `stat -c '%u:%g' config/profiles.toml` prints the right value. |
 | `TZ` | `Europe/Berlin` | Timezone the school day is interpreted in. |
 | `UNTIS_MCP_LOG_LEVEL` | `INFO` | Log verbosity. |
-| `UNTIS_MCP_AUTH_TOKEN` | empty | Bearer token clients must present. |
+| `UNTIS_MCP_AUTH_TOKEN` | empty | Token clients must present, on both interfaces, as a header or in the URL. |
+| `UNTIS_MCP_REST` | `on` | Serve the REST interface under `/api`; `off` serves MCP alone. |
 
 Any other variable in the file is passed into the container as well, which is how a profile
 using `password_env` gets its password.
@@ -202,10 +259,39 @@ the registry and tarball transfer paths.
 ### Security note
 
 The server holds credentials for all configured schools and performs **no authorization of
-its own** — any client that can reach the HTTP port can read every profile. `UNTIS_MCP_BIND`
+its own** — any client that can reach the HTTP port can read every profile, through the MCP
+endpoint or through `/api`. `UNTIS_MCP_BIND`
 in `.env` is therefore the real access control: point it at your LAN or VPN interface only,
 never port-forward it from the internet, and set `UNTIS_MCP_AUTH_TOKEN` as soon as it is
 anything other than `127.0.0.1`.
+
+### Connecting a client
+
+With a token set, a client presents it in one of two ways:
+
+- **As a bearer header** — Claude Desktop and Claude Code, `curl`, anything that can set
+  request headers. For Claude Desktop, `mcp-remote` passes it along:
+
+  ```json
+  {
+    "mcpServers": {
+      "untis": {
+        "command": "npx",
+        "args": ["-y", "mcp-remote", "https://host:port/mcp", "--header", "Authorization:${AUTH_HEADER}"],
+        "env": { "AUTH_HEADER": "Bearer <token>" }
+      }
+    }
+  }
+  ```
+
+- **In the URL** — a custom connector in the Claude web and mobile apps is given a URL and
+  nothing else (it authenticates by OAuth otherwise, which this server does not offer). Enter
+  `https://host:port/<token>/mcp` as the connector's URL; the server strips the prefix and
+  treats the request as if the header had been sent.
+
+The URL shape makes the link itself the secret: whoever has it has the data. Generate the
+token with `openssl rand -hex 32`, never paste the link into a chat, and keep it out of the
+logs of any reverse proxy in front of the server — the server's own access log never sees it.
 
 ---
 

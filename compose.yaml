@@ -32,7 +32,10 @@ services:
       UNTIS_MCP_HOST: 0.0.0.0
       UNTIS_MCP_PORT: ${UNTIS_MCP_PORT:-8000}
       UNTIS_MCP_LOG_LEVEL: ${UNTIS_MCP_LOG_LEVEL:-INFO}
-      # Optional bearer token (ADR-006). Leave unset to run without one.
+      # The plain HTTP interface beside the MCP endpoint (ADR-012); 'off' serves MCP alone.
+      UNTIS_MCP_REST: ${UNTIS_MCP_REST:-on}
+      # Optional token (ADR-006), required by both interfaces — as a bearer header or as
+      # the first URL segment (/<token>/mcp). Leave unset to run without one.
       UNTIS_MCP_AUTH_TOKEN: ${UNTIS_MCP_AUTH_TOKEN:-}
 
     # <interface>:<host port>:<container port>. The default is the loopback, so a stack
