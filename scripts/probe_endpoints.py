@@ -291,12 +291,13 @@ def build_probes(
     start: date,
     end: date,
     rpc_range: tuple[date, date] | None = None,
+    today: date | None = None,
 ) -> list[Probe]:
     """The endpoint map of section 5.2, scoped to the *child*, plus a few guesses.
 
     ``student_id`` is deliberately a parameter rather than ``ctx.person_id``: for a parent
     account those are two different people, and passing the parent is what produced a wall
-    of 403s in the first run.
+    of 403s in the first run. ``today`` defaults to the real date and exists for the tests.
     """
     compact_start = start.strftime("%Y%m%d")
     compact_end = end.strftime("%Y%m%d")
@@ -304,8 +305,8 @@ def build_probes(
     rpc_start, rpc_end = rpc_range or (start, end)
     # The Monday of the *current* week, not of the range start: the first run asked for a
     # holiday week, got an empty payload, and so never found the class id in it.
-    today = max(start, min(end, date.today()))
-    monday = today - timedelta(days=today.weekday())
+    reference = max(start, min(end, today or date.today()))
+    monday = reference - timedelta(days=reference.weekday())
 
     return [
         # --- section 5.2, documented ------------------------------------------------

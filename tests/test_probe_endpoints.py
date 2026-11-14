@@ -389,7 +389,9 @@ def test_klasse_id_is_recovered_from_the_timetable_payload():
 def test_probe_set_covers_the_endpoint_map():
     ctx = probe.AuthContext(session_id="s", person_type=12, person_id=PARENT_PERSON_ID, klasse_id=0)
 
-    probes = probe.build_probes(ctx, STUDENT_ID, 331, date(2026, 9, 7), date(2026, 9, 30))
+    probes = probe.build_probes(
+        ctx, STUDENT_ID, 331, date(2026, 9, 7), date(2026, 9, 30), today=date(2026, 9, 9)
+    )
     by_name = {item.name: item for item in probes}
 
     # The two date formats of section 5.3 must both appear, in the right places.
@@ -402,9 +404,17 @@ def test_probe_set_covers_the_endpoint_map():
     assert by_name["absences"].params["studentId"] == STUDENT_ID
     assert by_name["exams"].params["klasseId"] == 331
     assert by_name["homework"].params["endDate"] == "20260930"
-    # weekly/data wants the Monday of the week, not the raw start date.
-    monday = probe.build_probes(ctx, STUDENT_ID, None, date(2026, 9, 10), date(2026, 9, 30))
-    assert {p.name: p for p in monday}["timetable-weekly-data"].params["date"] == "2026-09-07"
+    # weekly/data wants the Monday of the current week, not the raw start date ...
+    monday = probe.build_probes(
+        ctx, STUDENT_ID, None, date(2026, 9, 7), date(2026, 9, 30), today=date(2026, 9, 17)
+    )
+    assert {p.name: p for p in monday}["timetable-weekly-data"].params["date"] == "2026-09-14"
+    # ... and that week lies inside the range, even when today does not.
+    for today, expected in [(date(2026, 8, 1), "2026-09-07"), (date(2026, 11, 14), "2026-09-28")]:
+        clamped = probe.build_probes(
+            ctx, STUDENT_ID, None, date(2026, 9, 10), date(2026, 9, 30), today=today
+        )
+        assert {p.name: p for p in clamped}["timetable-weekly-data"].params["date"] == expected
     # The endpoints the whole spike exists for run in discovery mode.
     assert by_name["calendar-entry-detail-v2"].discover
 
