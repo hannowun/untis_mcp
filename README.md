@@ -298,3 +298,17 @@ logs of any reverse proxy in front of the server — the server's own access log
 ## Documentation
 
 - [Requirements, Design and Architecture](documents/requirements-and-design.md)
+
+---
+
+## Disclaimer
+
+This is an independent project. It is not affiliated with, endorsed by or supported by
+Untis GmbH; "Untis" and "WebUntis" are their trademarks. The server talks to the same web
+interface the WebUntis browser client uses, which is not a documented public API and may
+change without notice. Use it at your own risk, only with accounts you are entitled to use,
+and within the terms of use your school sets for its WebUntis access.
+
+## License
+
+[MIT](LICENSE) © 2026 Hanno Wunderlich

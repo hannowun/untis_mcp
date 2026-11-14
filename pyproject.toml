@@ -3,6 +3,8 @@ name = "untis-mcp"
 version = "0.1.0"
 description = "Private MCP server exposing WebUntis data for several children across several schools"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=2.0",
