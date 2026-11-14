@@ -23,8 +23,9 @@ from untis_mcp.errors import (
     UntisError,
     UntisUnavailable,
 )
+from untis_mcp.untis import client as client_module
 from untis_mcp.untis.auth import SESSION_TTL_SECONDS
-from untis_mcp.untis.client import ClientRegistry, UntisClient
+from untis_mcp.untis.client import LOGIN_BLOCK_SECONDS, ClientRegistry, UntisClient
 
 TIMETABLE = "/WebUntis/api/rest/view/v1/timetable/entries"
 
@@ -79,6 +80,72 @@ async def test_an_unreachable_school_is_reported_as_unavailable():
 
     with pytest.raises(UntisUnavailable, match="'anna'"):
         await client.session()
+
+
+# --------------------------------------------------------------- blocking after a rejection
+
+
+async def test_a_rejected_login_is_not_repeated_within_the_block():
+    """ADR-013: later calls fail at once instead of spending the school's lockout budget."""
+    fake = FakeUntis(valid_credentials=False)
+    client = make_client(fake)
+
+    with pytest.raises(UntisAuthError):
+        await client.session()
+    for _ in range(5):
+        with pytest.raises(UntisAuthError) as excinfo:
+            await client.get(TIMETABLE)
+
+    assert fake.rejected_logins == 1
+    assert fake.data_requests == []
+    message = str(excinfo.value)
+    assert "'anna'" in message
+    assert "bad credentials" in message
+    assert "15 minute(s)" in message
+    assert "do not retry" in message
+
+
+async def test_the_login_is_attempted_again_once_the_block_has_passed(monkeypatch):
+    fake = FakeUntis(valid_credentials=False)
+    client = make_client(fake)
+    now = [1000.0]
+    monkeypatch.setattr(client_module.time, "monotonic", lambda: now[0])
+
+    with pytest.raises(UntisAuthError):
+        await client.session()
+
+    now[0] += LOGIN_BLOCK_SECONDS - 1
+    with pytest.raises(UntisAuthError, match="1 minute"):
+        await client.session()
+    assert fake.rejected_logins == 1
+
+    # The password has been fixed in the meantime.
+    fake.valid_credentials = True
+    now[0] += 2
+    assert (await client.session()).student_id == STUDENT_ID
+    assert fake.login_count == 1
+
+
+async def test_an_unreachable_school_does_not_block_the_login():
+    """Only a rejection counts against the account; an outage is retried on the next call."""
+    fake = FakeUntis(unreachable=True)
+    client = make_client(fake)
+
+    with pytest.raises(UntisUnavailable):
+        await client.session()
+    fake.unreachable = False
+
+    assert (await client.session()).student_id == STUDENT_ID
+
+
+async def test_a_blocked_profile_does_not_block_the_other():
+    rejected = make_client(FakeUntis(valid_credentials=False), name="ben")
+    healthy = make_client(FakeUntis())
+
+    with pytest.raises(UntisAuthError):
+        await rejected.session()
+
+    assert (await healthy.session()).student_id == STUDENT_ID
 
 
 async def test_a_tenant_that_issues_no_token_still_logs_in():

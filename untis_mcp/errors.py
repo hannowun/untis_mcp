@@ -33,6 +33,7 @@ class UntisError(UntisMcpError):
 
     def __init__(self, profile: str, message: str) -> None:
         self.profile = profile
+        self.detail = message
         super().__init__(f"profile {profile!r}: {message}")
 
 

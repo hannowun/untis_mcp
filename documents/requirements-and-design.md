@@ -408,6 +408,27 @@ than by their text: an unknown profile is 404, a feature the school forbids is 5
 by ADR-010, and unlike 403 not confusable with the caller's own token), an unreachable tenant
 is 503, and a bad argument is 400. Each body carries a stable `kind` beside the message.
 
+### ADR-013: A rejected login blocks further attempts for 15 minutes
+
+**Decision:** When a login fails with `UntisAuthError` — the tenant rejected the credentials,
+or the account could not be resolved to a student — the profile's client makes no further
+login attempt for 15 minutes. Every call in that window fails at once with the original
+reason, the time remaining and the instruction not to retry; a restart, which also reloads
+the configuration, lifts the block. An unreachable tenant (`UntisUnavailable`) does not block.
+
+**Rationale:** Schools lock an account after a handful of failed logins, and unlocking it
+means asking the school office. Sessions are created lazily, so without a block every tool
+call after a password change is one more failed attempt, and an assistant that answers a
+single question with several tool calls — or retries a failure — exhausts that budget within
+a minute. A fixed window keeps the attempt rate at four per hour at most, which no lockout
+policy we know of reaches, while still recovering by itself when the cause was on the
+school's side. A network outage costs the account nothing, so blocking on it would only
+delay recovery.
+
+**Consequence:** The block lives in memory per profile, so it never affects the other child
+(FR-07), and fixing the password means editing the configuration and restarting the server.
+Tested against the fake WebUntis with a controlled clock.
+
 ---
 
 ## 5. WebUntis protocol details

@@ -12,13 +12,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from datetime import date, datetime
 from typing import Any
 
 import httpx
 
 from untis_mcp.config import Config, ProfileConfig
-from untis_mcp.errors import FeatureNotAvailable, UntisError, UntisUnavailable
+from untis_mcp.errors import FeatureNotAvailable, UntisAuthError, UntisError, UntisUnavailable
 from untis_mcp.untis.auth import (
     JsonRpcError,
     Session,
@@ -32,6 +33,11 @@ from untis_mcp.untis.capabilities import Capabilities
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 30.0
+
+# After a rejected login, no further attempt is made for this long (ADR-013). Schools lock an
+# account after a handful of failed logins, and an assistant that keeps calling tools after a
+# password change would otherwise spend all of them within a minute.
+LOGIN_BLOCK_SECONDS = 15 * 60
 
 TIMETABLE_ENTRIES = "/WebUntis/api/rest/view/v1/timetable/entries"
 ABSENCES = "/WebUntis/api/classreg/absences/students"
@@ -59,6 +65,8 @@ class UntisClient:
         self._session: Session | None = None
         self._school_year: tuple[date, date] | None = None
         self._lock = asyncio.Lock()
+        self._login_blocked_until: float | None = None
+        self._login_failure: UntisAuthError | None = None
 
     # ------------------------------------------------------------------ session handling
 
@@ -76,18 +84,50 @@ class UntisClient:
 
         The lock is what keeps two concurrent tool calls from starting two logins; the
         second waiter re-checks and finds the session the first one created.
+
+        A rejected login blocks further attempts for `LOGIN_BLOCK_SECONDS` (ADR-013): until
+        then every call fails at once, without contacting the school.
         """
         async with self._lock:
             if not force and self._session is not None and not self._session.is_stale:
                 return self._session
+
+            self._check_login_block()
 
             if self._session is not None:
                 reason = "forced" if force else f"stale after {self._session.age_seconds:.0f}s"
                 logger.debug("profile %r: re-authenticating (%s)", self.profile.name, reason)
                 self._session = None
 
-            self._session = await login(self._http, self.profile)
+            try:
+                self._session = await login(self._http, self.profile)
+            except UntisAuthError as exc:
+                self._login_blocked_until = time.monotonic() + LOGIN_BLOCK_SECONDS
+                self._login_failure = exc
+                logger.warning(
+                    "profile %r: login rejected, no further attempt for %d minutes",
+                    self.profile.name,
+                    LOGIN_BLOCK_SECONDS // 60,
+                )
+                raise
+            self._login_blocked_until = None
+            self._login_failure = None
             return self._session
+
+    def _check_login_block(self) -> None:
+        if self._login_blocked_until is None:
+            return
+        remaining = self._login_blocked_until - time.monotonic()
+        if remaining <= 0:
+            return
+        reason = self._login_failure.detail if self._login_failure else "login rejected"
+        raise UntisAuthError(
+            self.profile.name,
+            f"the last login was rejected ({reason}), so no new attempt is made for another "
+            f"{max(1, round(remaining / 60))} minute(s), to keep the school from locking the "
+            f"account. Check the credentials in the configuration and restart the server to "
+            f"try again at once — do not retry this call.",
+        )
 
     async def aclose(self) -> None:
         if self._session is not None:

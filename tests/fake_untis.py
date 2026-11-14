@@ -73,6 +73,7 @@ class FakeUntis:
 
     # --- what happened ----------------------------------------------------------------
     login_count: int = 0
+    rejected_logins: int = 0
     data_requests: list[str] = field(default_factory=list)
     data_params: list[dict[str, str]] = field(default_factory=list)
     seen_headers: list[dict[str, str]] = field(default_factory=list)
@@ -101,6 +102,7 @@ class FakeUntis:
 
         if method == "authenticate":
             if not self.valid_credentials:
+                self.rejected_logins += 1
                 return self._rpc_error(body, -8504, "bad credentials")
             self.login_count += 1
             session_id = f"SESSION-{self.login_count}"
