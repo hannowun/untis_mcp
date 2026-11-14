@@ -1,13 +1,14 @@
 # untis-mcp
 
-A private [MCP](https://modelcontextprotocol.io) server that makes **WebUntis** information
-available to an AI assistant.
+A self-hosted [MCP](https://modelcontextprotocol.io) server that makes **WebUntis**
+information available to an AI assistant.
 
-Both of my children attend different schools, and each school runs its own WebUntis tenant
-with its own credentials. This server logs into all of them and exposes their data through
-a handful of read-only MCP tools, so I can ask one assistant about timetables, absences and
-school messages instead of logging into two portals. The same calls are available as a plain
-HTTP/JSON API for everything that does not speak MCP.
+It is built for families whose children attend different schools, where each school runs
+its own WebUntis tenant with its own credentials. The server logs into all of them and
+exposes their data through a handful of read-only MCP tools, so one assistant can answer
+questions about timetables, absences, homework and school messages instead of you logging
+into several portals. The same calls are available as a plain HTTP/JSON API for everything
+that does not speak MCP.
 
 > **Status:** early development. The requirements, design and architecture are written down
 > in [`documents/requirements-and-design.md`](documents/requirements-and-design.md).
